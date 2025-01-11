@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
+import random
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
@@ -14,6 +15,21 @@ class Game:
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
+
+        self._background_surf = pygame.surface.Surface(self._display_surf.get_size())
+        self._background_surf.fill((0, 0, 0))
+        star_colors = [
+            (250, 250, 250), # white
+            (251, 251, 170), # yellow
+        ]
+        width = self._background_surf.get_width()
+        height = self._background_surf.get_height()
+        num_stars = width * height // 5000
+        for _ in range(num_stars):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            color = random.choice(star_colors)
+            self._background_surf.set_at((x, y), color)
 
         self._debug = False
         self._can_change_debug = True
@@ -73,7 +89,7 @@ class Game:
             if quit_game:
                 break
 
-            self._display_surf.fill((0, 0, 0))
+            self._display_surf.blit(self._background_surf, (0, 0))
 
             if self._debug:
                 self._display_debug()
