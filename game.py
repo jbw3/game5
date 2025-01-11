@@ -39,9 +39,8 @@ class Game:
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
-        for i in range(joystick_count):
-            # joystick_count = pygame.joystick.get_count()\
-            joystick = pygame.joystick.Joystick(i)
+        for joystick in self._joysticks:
+            i = joystick.get_instance_id()
             name = joystick.get_name()
             text_surface = self._debug_font.render(f' {i}: {name}', False, DEBUG_TEXT_COLOR)
             self._display_surf.blit(text_surface, (0, y))
