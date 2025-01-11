@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
+from person import Person
 from ship import Ship
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
@@ -87,11 +88,15 @@ class Game:
 
     def start_mission(self) -> None:
         self.ship = Ship(self)
+        people: list[Person] = []
+
+        x = 150
+        for joystick in self._joysticks:
+            person = Person(self, (x, 150), joystick)
+            people.append(person)
+            x += 20
 
     def mainloop(self) -> None:
-        self.start_mission()
-        assert self.ship is not None
-
         quit_game = False
         while True:
             for event in pygame.event.get():
@@ -99,9 +104,14 @@ class Game:
                     pygame.quit()
                     quit_game = True
                 elif event.type == KEYDOWN:
-                    if event.key == pygame.K_F1 and self._can_change_debug:
-                        self._debug = not self._debug
-                        self._can_change_debug = False
+                    if event.key == pygame.K_F1:
+                        if self._can_change_debug:
+                            self._debug = not self._debug
+                            self._can_change_debug = False
+                    elif event.key == pygame.K_SPACE:
+                        # this is a bit hacky
+                        if self.ship is None:
+                            self.start_mission()
                 elif event.type == KEYUP:
                     if event.key == pygame.K_F1:
                         self._can_change_debug = True
@@ -118,7 +128,10 @@ class Game:
             if quit_game:
                 break
 
-            self.ship.update(self)
+            if self.ship is not None:
+                self.ship.update(self)
+            for sprite in self.sprites:
+                sprite.update(self)
 
             self._display_surf.blit(self._background_surf, (0, 0))
             self._sprites.draw(self._display_surf)
