@@ -1,5 +1,5 @@
 import pygame
-from pygame.locals import QUIT
+from pygame.locals import KEYDOWN, KEYUP, QUIT
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
@@ -13,6 +13,8 @@ class Game:
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
 
+        self._debug = False
+        self._can_change_debug = True
         self._debug_font = pygame.font.SysFont('Courier', 20)
 
     def _display_debug(self) -> None:
@@ -31,11 +33,20 @@ class Game:
                 if event.type == QUIT:
                     pygame.quit()
                     quit_game = True
+                elif event.type == KEYDOWN:
+                    if event.key == pygame.K_F1 and self._can_change_debug:
+                        self._debug = not self._debug
+                        self._can_change_debug = False
+                elif event.type == KEYUP:
+                    if event.key == pygame.K_F1:
+                        self._can_change_debug = True
             if quit_game:
                 break
 
             self._display_surf.fill((0, 0, 0))
-            self._display_debug()
+
+            if self._debug:
+                self._display_debug()
 
             pygame.display.update()
             tick_delta_ms = self._fps_clock.tick(60.0)
