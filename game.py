@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
+from ship import Ship
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
@@ -35,7 +36,14 @@ class Game:
         self._can_change_debug = True
         self._debug_font = pygame.font.SysFont('Courier', 20)
 
+        self._sprites = pygame.sprite.Group()
         self._joysticks: list[pygame.joystick.JoystickType] = []
+
+        self.ship: Ship|None = None
+
+    @property
+    def sprites(self) -> pygame.sprite.Group:
+        return self._sprites
 
     def _display_debug(self) -> None:
         y = 0
@@ -62,7 +70,12 @@ class Game:
             self._display_surf.blit(text_surface, (0, y))
             y += text_surface.get_rect().bottom
 
+    def start_mission(self) -> None:
+        self.ship = Ship(self)
+
     def mainloop(self) -> None:
+        self.start_mission()
+
         quit_game = False
         while True:
             for event in pygame.event.get():
@@ -89,7 +102,10 @@ class Game:
             if quit_game:
                 break
 
+            self.ship.update(self)
+
             self._display_surf.blit(self._background_surf, (0, 0))
+            self._sprites.draw(self._display_surf)
 
             if self._debug:
                 self._display_debug()
