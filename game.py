@@ -17,20 +17,7 @@ class Game:
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
 
-        self._background_surf = pygame.surface.Surface(self._display_surf.get_size())
-        self._background_surf.fill((0, 0, 0))
-        star_colors = [
-            (250, 250, 250), # white
-            (251, 251, 170), # yellow
-        ]
-        width = self._background_surf.get_width()
-        height = self._background_surf.get_height()
-        num_stars = width * height // 5000
-        for _ in range(num_stars):
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            color = random.choice(star_colors)
-            self._background_surf.set_at((x, y), color)
+        self._background_surf = self._create_star_background()
 
         self._debug = False
         self._can_change_debug = True
@@ -70,11 +57,42 @@ class Game:
             self._display_surf.blit(text_surface, (0, y))
             y += text_surface.get_rect().bottom
 
+    def _create_star_background(self) -> pygame.surface.Surface:
+        surface = pygame.surface.Surface(self._display_surf.get_size())
+        surface.fill((0, 0, 0))
+        width = surface.get_width()
+        height = surface.get_height()
+        num_stars = width * height // 5000
+        num_white_stars = random.randint(num_stars * 3 // 8, num_stars * 5 // 8)
+        num_remaining = num_stars - num_white_stars
+        num_yellow_stars = random.randint(num_remaining * 1 // 2, num_remaining * 5 // 8)
+        num_red_stars = max(0, num_stars - num_white_stars - num_yellow_stars)
+
+        print(num_white_stars, num_yellow_stars, num_red_stars)
+
+        star_info = [
+            # white
+            (num_white_stars, (250, 250, 250)),
+            # yellow
+            (num_yellow_stars, (255, 255, 180)),
+            # red
+            (num_red_stars, (255, 160, 180)),
+        ]
+
+        for num, color in star_info:
+            for _ in range(num):
+                x = random.randint(0, width - 1)
+                y = random.randint(0, height - 1)
+                surface.set_at((x, y), color)
+
+        return surface
+
     def start_mission(self) -> None:
         self.ship = Ship(self)
 
     def mainloop(self) -> None:
         self.start_mission()
+        assert self.ship is not None
 
         quit_game = False
         while True:
