@@ -68,8 +68,6 @@ class Game:
         num_yellow_stars = random.randint(num_remaining * 1 // 2, num_remaining * 5 // 8)
         num_red_stars = max(0, num_stars - num_white_stars - num_yellow_stars)
 
-        print(num_white_stars, num_yellow_stars, num_red_stars)
-
         star_info = [
             # white
             (num_white_stars, (250, 250, 250)),
