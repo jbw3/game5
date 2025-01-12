@@ -2,6 +2,8 @@ import os
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
+
+import pygame.locals
 from person import Person
 from ship import Ship
 
@@ -93,10 +95,33 @@ class Game:
         for i in range(num_galaxies):
             x = (width // num_galaxies * i) + random.randint(0, width // num_galaxies)
             y = random.randint(50, height - 50)
-            galaxy_surface.set_alpha(random.randint(100, 255))
+            galaxy_surface.set_alpha(random.randint(100, 200))
             angle = random.random() * 40.0 - 20.0
             galaxy_surface_rotated = pygame.transform.rotate(galaxy_surface, angle)
             surface.blit(galaxy_surface_rotated, (x, y))
+
+        nebula_part_images = [
+            pygame.image.load(os.path.join('images', f'nebula_part{i+1}.png'))
+            for i in range(5)
+        ]
+        num_nebulas = 2
+        for i in range(num_nebulas):
+            nebula_width = 100 + random.randint(-20, 20)
+            nebula_heigh = 140 + random.randint(-25, 25)
+            nebula_surface = pygame.surface.Surface((nebula_width, nebula_heigh))
+            num_parts = (nebula_width * nebula_heigh) // 50 + random.randint(0, 50)
+            for _ in range(num_parts):
+                part = random.choice(nebula_part_images)
+                part.set_alpha(random.randint(10, 30))
+                part_width = part.get_rect().width
+                part_height = part.get_rect().height
+                x = int(random.normalvariate(nebula_width / 2, nebula_width / 6) - part_width / 2)
+                y = int(random.normalvariate(nebula_heigh / 2, nebula_heigh / 6) - part_height / 2)
+                nebula_surface.blit(part, (x, y))
+            x = random.randint(100, width - 100)
+            y = (height // num_nebulas * i) + random.randint(100, height // num_nebulas - 100)
+            nebula_surface.set_alpha(130)
+            surface.blit(nebula_surface, (x, y))
 
         return surface
 
