@@ -78,11 +78,14 @@ class Game:
             (num_red_stars, (255, 160, 180)),
         ]
 
+        star_surface = pygame.surface.Surface((1, 1))
         for num, color in star_info:
             for _ in range(num):
                 x = random.randint(0, width - 1)
                 y = random.randint(0, height - 1)
-                surface.set_at((x, y), color)
+                star_surface.set_at((0, 0), color)
+                star_surface.set_alpha(random.randint(60, 255))
+                surface.blit(star_surface, (x, y))
 
         return surface
 
