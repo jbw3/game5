@@ -1,3 +1,4 @@
+import os
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
@@ -86,6 +87,16 @@ class Game:
                 star_surface.set_at((0, 0), color)
                 star_surface.set_alpha(random.randint(60, 255))
                 surface.blit(star_surface, (x, y))
+
+        num_galaxies = random.choice([2, 3])
+        galaxy_surface = pygame.image.load(os.path.join('images', 'galaxy1.png'))
+        for i in range(num_galaxies):
+            x = (width // num_galaxies * i) + random.randint(0, width // num_galaxies)
+            y = random.randint(50, height - 50)
+            galaxy_surface.set_alpha(random.randint(100, 255))
+            angle = random.random() * 40.0 - 20.0
+            galaxy_surface_rotated = pygame.transform.rotate(galaxy_surface, angle)
+            surface.blit(galaxy_surface_rotated, (x, y))
 
         return surface
 
