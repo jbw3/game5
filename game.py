@@ -90,9 +90,13 @@ class Game:
                 star_surface.set_alpha(random.randint(60, 255))
                 surface.blit(star_surface, (x, y))
 
+        galaxy_images = [
+            pygame.image.load(os.path.join('images', f'galaxy{i+1}.png'))
+            for i in range(2)
+        ]
         num_galaxies = random.choice([2, 3])
-        galaxy_surface = pygame.image.load(os.path.join('images', 'galaxy1.png'))
         for i in range(num_galaxies):
+            galaxy_surface = galaxy_images[i % len(galaxy_images)]
             x = (width // num_galaxies * i) + random.randint(0, width // num_galaxies)
             y = random.randint(50, height - 50)
             galaxy_surface.set_alpha(random.randint(100, 200))
