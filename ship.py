@@ -8,13 +8,13 @@ class Ship:
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
 
-    def __init__(self, game: 'Game'):
+    def __init__(self, game: 'Game', center: tuple[int, int]):
         image = pygame.surface.Surface((100, 100))
         image.fill(Ship.FLOOR_COLOR)
         self._sprite = pygame.sprite.Sprite()
         self._sprite.image = image
         self._sprite.rect = self._sprite.image.get_rect()
-        self._sprite.rect.center = (200, 200)
+        self._sprite.rect.center = center
         game.sprites.add(self._sprite)
 
         wall_width = 10
@@ -44,7 +44,7 @@ class Ship:
         wall = pygame.sprite.Sprite()
         wall.image = surface
         wall.rect = surface.get_rect()
-        wall.rect.topright = (self._sprite.rect.top, self._sprite.rect.left)
+        wall.rect.topright = (self._sprite.rect.left, self._sprite.rect.top)
         self._walls.append(wall)
 
         # right wall

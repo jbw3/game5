@@ -135,12 +135,15 @@ class Game:
         return surface
 
     def start_mission(self) -> None:
-        self.ship = Ship(self)
+        window_width, window_height = pygame.display.get_window_size()
+        ship_center = (window_width // 4, window_height // 2)
+
+        self.ship = Ship(self, ship_center)
         people: list[Person] = []
 
-        y = 170
+        y = ship_center[1] - 40
         for joystick in self._joysticks:
-            person = Person(self, (170, y), joystick)
+            person = Person(self, (ship_center[0], y), joystick)
             people.append(person)
             y += 20
 
