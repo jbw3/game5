@@ -1,3 +1,4 @@
+import os
 import pygame
 from typing import TYPE_CHECKING
 
@@ -9,6 +10,13 @@ class Ship:
     WALL_COLOR = (80, 80, 80)
 
     def __init__(self, game: 'Game', center: tuple[int, int]):
+        background_image = pygame.image.load(os.path.join('images', 'ship1.png'))
+        background_sprite = pygame.sprite.Sprite()
+        background_sprite.image = background_image
+        background_sprite.rect = background_image.get_rect()
+        background_sprite.rect.center = center
+        game.sprites.add(background_sprite)
+
         image = pygame.surface.Surface((100, 100))
         image.fill(Ship.FLOOR_COLOR)
         self._sprite = pygame.sprite.Sprite()
