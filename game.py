@@ -28,6 +28,7 @@ class Game:
         self._debug_font = pygame.font.SysFont('Courier', 20)
 
         self._sprites = pygame.sprite.Group()
+        self._solid = pygame.sprite.Group()
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
         self.ship: Ship|None = None
@@ -35,6 +36,10 @@ class Game:
     @property
     def sprites(self) -> pygame.sprite.Group:
         return self._sprites
+
+    @property
+    def solid(self) -> pygame.sprite.Group:
+        return self._solid
 
     def _display_debug(self) -> None:
         y = 0

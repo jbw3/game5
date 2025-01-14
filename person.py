@@ -19,6 +19,8 @@ class Person(pygame.sprite.Sprite):
 
     @override
     def update(self, game: 'Game') -> None:
+        last_rect = self.rect.copy()
+
         a0 = self._joystick.get_axis(0)
         if a0 < -0.2:
             self.rect.move_ip(-1.0, 0.0)
@@ -30,3 +32,14 @@ class Person(pygame.sprite.Sprite):
             self.rect.move_ip(0.0, -1.0)
         elif a1 > 0.2:
             self.rect.move_ip(0.0, 1.0)
+
+        for sprite in pygame.sprite.spritecollide(self, game.solid, False):
+            if last_rect.top >= sprite.rect.bottom:
+                self.rect.top = sprite.rect.bottom
+            elif last_rect.bottom <= sprite.rect.top:
+                self.rect.bottom = sprite.rect.top
+
+            if last_rect.left >= sprite.rect.right:
+                self.rect.left = sprite.rect.right
+            elif last_rect.right <= sprite.rect.left:
+                self.rect.right = sprite.rect.left
