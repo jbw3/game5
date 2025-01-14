@@ -138,11 +138,11 @@ class Game:
         self.ship = Ship(self)
         people: list[Person] = []
 
-        x = 150
+        y = 170
         for joystick in self._joysticks:
-            person = Person(self, (x, 150), joystick)
+            person = Person(self, (170, y), joystick)
             people.append(person)
-            x += 20
+            y += 20
 
     def mainloop(self) -> None:
         quit_game = False
