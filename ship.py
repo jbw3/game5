@@ -17,16 +17,25 @@ class Ship:
         background_sprite.rect.center = center
         game.sprites.add(background_sprite)
 
-        image = pygame.surface.Surface((100, 100))
-        image.fill(Ship.FLOOR_COLOR)
-        self._sprite = pygame.sprite.Sprite()
-        self._sprite.image = image
-        self._sprite.rect = self._sprite.image.get_rect()
-        self._sprite.rect.center = center
-        game.sprites.add(self._sprite)
-
         wall_width = 10
+        self._floor: list[pygame.sprite.Sprite] = []
         self._walls: list[pygame.sprite.Sprite] = []
+
+        surface = pygame.surface.Surface((100, 100))
+        surface.fill(Ship.FLOOR_COLOR)
+        floor1 = pygame.sprite.Sprite()
+        floor1.image = surface
+        floor1.rect = floor1.image.get_rect()
+        floor1.rect.center = (center[0], center[1] - 50)
+        self._floor.append(floor1)
+
+        surface = pygame.surface.Surface((100, 100))
+        surface.fill(Ship.FLOOR_COLOR)
+        floor2 = pygame.sprite.Sprite()
+        floor2.image = surface
+        floor2.rect = floor2.image.get_rect()
+        floor2.rect.topleft = (floor1.rect.left, floor1.rect.bottom)
+        self._floor.append(floor2)
 
         # top wall
         surface = pygame.surface.Surface((100 + wall_width*2, wall_width))
@@ -34,7 +43,7 @@ class Ship:
         wall = pygame.sprite.Sprite()
         wall.image = surface
         wall.rect = surface.get_rect()
-        wall.rect.bottomleft = (self._sprite.rect.left - wall_width, self._sprite.rect.top)
+        wall.rect.bottomleft = (floor1.rect.left - wall_width, floor1.rect.top)
         self._walls.append(wall)
 
         # bottom wall
@@ -43,26 +52,45 @@ class Ship:
         wall = pygame.sprite.Sprite()
         wall.image = surface
         wall.rect = surface.get_rect()
-        wall.rect.topleft = (self._sprite.rect.left - wall_width, self._sprite.rect.bottom)
+        wall.rect.topleft = (floor2.rect.left - wall_width, floor2.rect.bottom)
         self._walls.append(wall)
 
         # left wall
-        surface = pygame.surface.Surface((wall_width, 100))
+        surface = pygame.surface.Surface((wall_width, 200))
         surface.fill(Ship.WALL_COLOR)
         wall = pygame.sprite.Sprite()
         wall.image = surface
         wall.rect = surface.get_rect()
-        wall.rect.topright = (self._sprite.rect.left, self._sprite.rect.top)
+        wall.rect.topright = (floor1.rect.left, floor1.rect.top)
         self._walls.append(wall)
 
         # right wall
-        surface = pygame.surface.Surface((wall_width, 100))
+        surface = pygame.surface.Surface((wall_width, 200))
         surface.fill(Ship.WALL_COLOR)
         wall = pygame.sprite.Sprite()
         wall.image = surface
         wall.rect = surface.get_rect()
-        wall.rect.topleft = self._sprite.rect.right, self._sprite.rect.top
+        wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
         self._walls.append(wall)
+
+        surface = pygame.surface.Surface((38, wall_width))
+        surface.fill(Ship.WALL_COLOR)
+        wall = pygame.sprite.Sprite()
+        wall.image = surface
+        wall.rect = surface.get_rect()
+        wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - wall_width//2)
+        self._walls.append(wall)
+
+        surface = pygame.surface.Surface((38, wall_width))
+        surface.fill(Ship.WALL_COLOR)
+        wall = pygame.sprite.Sprite()
+        wall.image = surface
+        wall.rect = surface.get_rect()
+        wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - wall_width//2)
+        self._walls.append(wall)
+
+        for floor in self._floor:
+            game.sprites.add(floor)
 
         for wall in self._walls:
             game.sprites.add(wall)
