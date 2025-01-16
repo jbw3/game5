@@ -16,7 +16,7 @@ class Game:
         pygame.joystick.init()
 
         self._fps_clock = pygame.time.Clock()
-        self._tick_delta = 0.0
+        self._frame_time = 0.0
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
@@ -49,8 +49,8 @@ class Game:
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
-        tick_delta_ms = self._tick_delta * 1000
-        text_surface = self._debug_font.render(f'Tick delta: {tick_delta_ms:.1f} ms', False, DEBUG_TEXT_COLOR)
+        fram_time_ms = self._frame_time * 1000
+        text_surface = self._debug_font.render(f'Frame time: {fram_time_ms:.1f} ms', False, DEBUG_TEXT_COLOR)
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
@@ -63,6 +63,16 @@ class Game:
             i = joystick.get_instance_id()
             name = joystick.get_name()
             text_surface = self._debug_font.render(f' {i}: {name}', False, DEBUG_TEXT_COLOR)
+            self._display_surf.blit(text_surface, (0, y))
+            y += text_surface.get_rect().bottom
+
+            axes_str = ', '.join(f'{i}: {joystick.get_axis(i):.1f}' for i in range(joystick.get_numaxes()))
+            text_surface = self._debug_font.render(f'  axes: {axes_str}', False, DEBUG_TEXT_COLOR)
+            self._display_surf.blit(text_surface, (0, y))
+            y += text_surface.get_rect().bottom
+
+            buttons_str = ', '.join(f'{i}: {joystick.get_button(i)}' for i in range(joystick.get_numbuttons()))
+            text_surface = self._debug_font.render(f'  buttons: {buttons_str}', False, DEBUG_TEXT_COLOR)
             self._display_surf.blit(text_surface, (0, y))
             y += text_surface.get_rect().bottom
 
@@ -191,5 +201,5 @@ class Game:
                 self._display_debug()
 
             pygame.display.update()
-            tick_delta_ms = self._fps_clock.tick(60.0)
-            self._tick_delta = tick_delta_ms / 1000
+            frame_time_ms = self._fps_clock.tick(60.0)
+            self._frame_time = frame_time_ms / 1000
