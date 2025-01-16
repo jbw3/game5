@@ -96,6 +96,15 @@ class Ship:
             game.interior_view_sprites.add(wall)
             game.solid_sprites.add(wall)
 
+        self._pilot_console = pygame.sprite.Sprite()
+        self._pilot_console.image = pygame.image.load(os.path.join('images', 'pilot_console.png'))
+        self._pilot_console.rect = self._pilot_console.image.get_rect()
+        self._pilot_console.rect.centerx = floor1.rect.centerx
+        self._pilot_console.rect.top = floor1.rect.top
+        game.interior_view_sprites.add(self._pilot_console)
+        game.solid_sprites.add(self._pilot_console)
+
+        # flight view image
         ship_image_size = background_image.get_size()
         new_size = (ship_image_size[0] // 10, ship_image_size[1] // 10)
         flight_view_image = pygame.transform.scale(background_image, new_size)

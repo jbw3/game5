@@ -32,6 +32,7 @@ class Game:
         self._interior_view_sprites = pygame.sprite.Group()
         self._flight_view_sprites = pygame.sprite.Group()
         self._solid_sprites = pygame.sprite.Group()
+
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
         self.ship: Ship|None = None
