@@ -96,5 +96,14 @@ class Ship:
             game.interior_view_sprites.add(wall)
             game.solid_sprites.add(wall)
 
+        ship_image_size = background_image.get_size()
+        new_size = (ship_image_size[0] // 10, ship_image_size[1] // 10)
+        flight_view_image = pygame.transform.scale(background_image, new_size)
+        self._flight_sprite = pygame.sprite.Sprite()
+        self._flight_sprite.image = flight_view_image
+        self._flight_sprite.rect = flight_view_image.get_rect()
+        self._flight_sprite.rect.center = center
+        game.flight_view_sprites.add(self._flight_sprite)
+
     def update(self, game: 'Game') -> None:
         pass
