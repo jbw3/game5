@@ -22,8 +22,9 @@ class Game:
         self._display_surf.fill((0, 0, 0))
 
         display_size = self._display_surf.get_size()
-        self._interior_view_surface = self._create_star_background((display_size[0] // 2, display_size[1]))
-        self._flight_view_surface = self._interior_view_surface.copy()
+        self._space_background = self._create_star_background((display_size[0] // 2, display_size[1]))
+        self._interior_view_surface = self._space_background.copy()
+        self._flight_view_surface = self._space_background.copy()
 
         self._debug = False
         self._can_change_debug = True
@@ -36,6 +37,10 @@ class Game:
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
         self._ship: Ship|None = None
+
+    @property
+    def frame_time(self) -> float:
+        return self._frame_time
 
     @property
     def interior_view_sprites(self) -> pygame.sprite.Group:
@@ -158,15 +163,15 @@ class Game:
         return surface
 
     def start_mission(self) -> None:
-        window_width, window_height = pygame.display.get_window_size()
-        ship_center = (window_width // 4, window_height // 2)
+        interior_view_width, interior_view_height = self._interior_view_surface.get_size()
+        interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
-        self._ship = Ship(self, ship_center)
+        self._ship = Ship(self, interior_view_center, self._flight_view_surface.get_size())
         people: list[Person] = []
 
-        y = ship_center[1] - 40
+        y = interior_view_center[1] - 40
         for joystick in self._joysticks:
-            person = Person(self, (ship_center[0], y), joystick)
+            person = Person(self, (interior_view_center[0], y), joystick)
             people.append(person)
             y += 20
 
@@ -208,6 +213,9 @@ class Game:
                 sprite.update(self)
             for sprite in self.flight_view_sprites:
                 sprite.update(self)
+
+            self._interior_view_surface.blit(self._space_background, (0, 0))
+            self._flight_view_surface.blit(self._space_background, (0, 0))
 
             self._interior_view_sprites.draw(self._interior_view_surface)
             self._flight_view_sprites.draw(self._flight_view_surface)
