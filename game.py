@@ -35,7 +35,7 @@ class Game:
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
-        self.ship: Ship|None = None
+        self._ship: Ship|None = None
 
     @property
     def interior_view_sprites(self) -> pygame.sprite.Group:
@@ -48,6 +48,11 @@ class Game:
     @property
     def solid_sprites(self) -> pygame.sprite.Group:
         return self._solid_sprites
+
+    @property
+    def ship(self) -> Ship:
+        assert self._ship is not None, 'ship is None'
+        return self._ship
 
     def _display_debug(self) -> None:
         y = 0
@@ -156,7 +161,7 @@ class Game:
         window_width, window_height = pygame.display.get_window_size()
         ship_center = (window_width // 4, window_height // 2)
 
-        self.ship = Ship(self, ship_center)
+        self._ship = Ship(self, ship_center)
         people: list[Person] = []
 
         y = ship_center[1] - 40
@@ -179,7 +184,7 @@ class Game:
                             self._can_change_debug = False
                     elif event.key == pygame.K_SPACE:
                         # this is a bit hacky
-                        if self.ship is None:
+                        if self._ship is None:
                             self.start_mission()
                 elif event.type == KEYUP:
                     if event.key == pygame.K_F1:
@@ -197,8 +202,8 @@ class Game:
             if quit_game:
                 break
 
-            if self.ship is not None:
-                self.ship.update(self)
+            if self._ship is not None:
+                self._ship.update(self)
             for sprite in self.interior_view_sprites:
                 sprite.update(self)
             for sprite in self.flight_view_sprites:

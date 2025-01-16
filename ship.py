@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from game import Game
+    from person import Person
 
 class Ship:
     FLOOR_COLOR = (180, 180, 180)
@@ -104,6 +105,8 @@ class Ship:
         game.interior_view_sprites.add(self._pilot_console)
         game.solid_sprites.add(self._pilot_console)
 
+        self._pilot_console_person: Person|None = None
+
         # flight view image
         ship_image_size = background_image.get_size()
         new_size = (ship_image_size[0] // 10, ship_image_size[1] // 10)
@@ -113,6 +116,25 @@ class Ship:
         self._flight_sprite.rect = flight_view_image.get_rect()
         self._flight_sprite.rect.center = center
         game.flight_view_sprites.add(self._flight_sprite)
+
+        self._joystick: pygame.joystick.JoystickType|None = None
+
+    def try_activate_console(self, person: 'Person') -> bool:
+        console_rect: pygame.rect.Rect = self._pilot_console.rect.inflate(4, 20)
+        if self._pilot_console_person is not None or not console_rect.colliderect(person.rect):
+            return False
+
+        self._pilot_console_person = person
+        self._joystick = person.joystick
+
+        self._pilot_console_person.rect.centerx = self._pilot_console.rect.centerx
+        self._pilot_console_person.rect.top = self._pilot_console.rect.bottom + 4
+
+        return True
+
+    def deactivate_console(self, person: 'Person') -> None:
+        self._pilot_console_person = None
+        self._joystick = None
 
     def update(self, game: 'Game') -> None:
         pass
