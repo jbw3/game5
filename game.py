@@ -21,25 +21,32 @@ class Game:
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
 
-        self._background_surf = self._create_star_background()
+        display_size = self._display_surf.get_size()
+        self._interior_view_surface = self._create_star_background((display_size[0] // 2, display_size[1]))
+        self._flight_view_surface = self._interior_view_surface.copy()
 
         self._debug = False
         self._can_change_debug = True
         self._debug_font = pygame.font.SysFont('Courier', 20)
 
-        self._sprites = pygame.sprite.Group()
-        self._solid = pygame.sprite.Group()
+        self._interior_view_sprites = pygame.sprite.Group()
+        self._flight_view_sprites = pygame.sprite.Group()
+        self._solid_sprites = pygame.sprite.Group()
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
         self.ship: Ship|None = None
 
     @property
-    def sprites(self) -> pygame.sprite.Group:
-        return self._sprites
+    def interior_view_sprites(self) -> pygame.sprite.Group:
+        return self._interior_view_sprites
 
     @property
-    def solid(self) -> pygame.sprite.Group:
-        return self._solid
+    def flight_view_sprites(self) -> pygame.sprite.Group:
+        return self._flight_view_sprites
+
+    @property
+    def solid_sprites(self) -> pygame.sprite.Group:
+        return self._solid_sprites
 
     def _display_debug(self) -> None:
         y = 0
@@ -76,8 +83,8 @@ class Game:
             self._display_surf.blit(text_surface, (0, y))
             y += text_surface.get_rect().bottom
 
-    def _create_star_background(self) -> pygame.surface.Surface:
-        surface = pygame.surface.Surface(self._display_surf.get_size())
+    def _create_star_background(self, size: tuple[int, int]) -> pygame.surface.Surface:
+        surface = pygame.surface.Surface(size)
         surface.fill((0, 0, 0))
         width = surface.get_width()
         height = surface.get_height()
@@ -191,11 +198,17 @@ class Game:
 
             if self.ship is not None:
                 self.ship.update(self)
-            for sprite in self.sprites:
+            for sprite in self.interior_view_sprites:
+                sprite.update(self)
+            for sprite in self.flight_view_sprites:
                 sprite.update(self)
 
-            self._display_surf.blit(self._background_surf, (0, 0))
-            self._sprites.draw(self._display_surf)
+            self._interior_view_sprites.draw(self._interior_view_surface)
+            self._flight_view_sprites.draw(self._flight_view_surface)
+
+            window_width, _ = pygame.display.get_window_size()
+            self._display_surf.blit(self._interior_view_surface, (0, 0))
+            self._display_surf.blit(self._flight_view_surface, (window_width // 2, 0))
 
             if self._debug:
                 self._display_debug()

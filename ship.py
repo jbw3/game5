@@ -15,7 +15,7 @@ class Ship:
         background_sprite.image = background_image
         background_sprite.rect = background_image.get_rect()
         background_sprite.rect.center = center
-        game.sprites.add(background_sprite)
+        game.interior_view_sprites.add(background_sprite)
 
         wall_width = 10
         self._floor: list[pygame.sprite.Sprite] = []
@@ -90,11 +90,11 @@ class Ship:
         self._walls.append(wall)
 
         for floor in self._floor:
-            game.sprites.add(floor)
+            game.interior_view_sprites.add(floor)
 
         for wall in self._walls:
-            game.sprites.add(wall)
-            game.solid.add(wall)
+            game.interior_view_sprites.add(wall)
+            game.solid_sprites.add(wall)
 
     def update(self, game: 'Game') -> None:
         pass

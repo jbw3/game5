@@ -13,7 +13,7 @@ class Person(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = center
 
-        game.sprites.add(self)
+        game.interior_view_sprites.add(self)
 
         self._joystick = joystick
 
@@ -33,7 +33,7 @@ class Person(pygame.sprite.Sprite):
         elif a1 > 0.2:
             self.rect.move_ip(0.0, 1.0)
 
-        for sprite in pygame.sprite.spritecollide(self, game.solid, False):
+        for sprite in pygame.sprite.spritecollide(self, game.solid_sprites, False):
             if last_rect.top >= sprite.rect.bottom:
                 self.rect.top = sprite.rect.bottom
             elif last_rect.bottom <= sprite.rect.top:
