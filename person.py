@@ -1,4 +1,5 @@
 from enum import Enum, unique
+import math
 import os
 import pygame
 from typing import TYPE_CHECKING, override
@@ -12,12 +13,17 @@ class Person(pygame.sprite.Sprite):
         Moving = 0
         Console = 1
 
+    MAX_SPEED = 60.0
+
     def __init__(self, game: 'Game', center: tuple[int, int], joystick: pygame.joystick.JoystickType):
         super().__init__()
 
         self.image = pygame.image.load(os.path.join('images', 'person.png'))
         self.rect = self.image.get_rect()
         self.rect.center = center
+
+        self._x = float(center[0])
+        self._y = float(center[1])
 
         game.interior_view_sprites.add(self)
 
@@ -42,27 +48,40 @@ class Person(pygame.sprite.Sprite):
         last_rect = self.rect.copy()
 
         a0 = self._joystick.get_axis(0)
-        if a0 < -0.2:
-            self.rect.move_ip(-1.0, 0.0)
-        elif a0 > 0.2:
-            self.rect.move_ip(1.0, 0.0)
+        if abs(a0) > 0.2:
+            x_axis = a0
+        else:
+            x_axis = 0.0
 
         a1 = self._joystick.get_axis(1)
-        if a1 < -0.2:
-            self.rect.move_ip(0.0, -1.0)
-        elif a1 > 0.2:
-            self.rect.move_ip(0.0, 1.0)
+        if abs(a1) > 0.2:
+            y_axis = a1
+        else:
+            y_axis = 0.0
+
+        angle = math.atan2(y_axis, x_axis)
+        magnitude = min(1.0, math.sqrt(x_axis**2 + y_axis**2))
+        speed = Person.MAX_SPEED * magnitude * game.frame_time
+
+        self._x += speed * math.cos(angle)
+        self._y += speed * math.sin(angle)
+
+        self.rect.center = (int(self._x), int(self._y))
 
         for sprite in pygame.sprite.spritecollide(self, game.solid_sprites, False):
             if last_rect.top >= sprite.rect.bottom:
                 self.rect.top = sprite.rect.bottom
+                self._y = float(self.rect.centery)
             elif last_rect.bottom <= sprite.rect.top:
                 self.rect.bottom = sprite.rect.top
+                self._y = float(self.rect.centery)
 
             if last_rect.left >= sprite.rect.right:
                 self.rect.left = sprite.rect.right
+                self._x = float(self.rect.centerx)
             elif last_rect.right <= sprite.rect.left:
                 self.rect.right = sprite.rect.left
+                self._x = float(self.rect.centerx)
 
         if self._joystick.get_button(0):
             if game.ship.try_activate_console(self):
