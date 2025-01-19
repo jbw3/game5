@@ -21,10 +21,13 @@ class Game:
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
 
-        display_size = self._display_surf.get_size()
-        self._space_background = self._create_star_background((display_size[0] // 2, display_size[1]))
+        display_width, display_height = self._display_surf.get_size()
+        self._space_background = self._create_star_background((display_width // 2, display_height))
         self._interior_view_surface = self._space_background.copy()
         self._flight_view_surface = self._space_background.copy()
+
+        self._divider = pygame.surface.Surface((8, display_height))
+        self._divider.fill((130, 130, 130))
 
         self._debug = False
         self._can_change_debug = True
@@ -223,6 +226,7 @@ class Game:
             window_width, _ = pygame.display.get_window_size()
             self._display_surf.blit(self._interior_view_surface, (0, 0))
             self._display_surf.blit(self._flight_view_surface, (window_width // 2, 0))
+            self._display_surf.blit(self._divider, (window_width // 2 - 4, 0))
 
             if self._debug:
                 self._display_debug()
