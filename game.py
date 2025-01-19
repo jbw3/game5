@@ -3,13 +3,15 @@ import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
 
-import pygame.locals
 from person import Person
 from ship import Ship
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
 class Game:
+    MAX_FPS = 60.0
+    MAX_FRAME_TIME_MS = 1000 / MAX_FPS
+
     def __init__(self):
         pygame.init()
         pygame.font.init()
@@ -17,6 +19,7 @@ class Game:
 
         self._fps_clock = pygame.time.Clock()
         self._frame_time = 0.0
+        self._work_time_ms = 0
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
@@ -70,8 +73,8 @@ class Game:
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
-        fram_time_ms = self._frame_time * 1000
-        text_surface = self._debug_font.render(f'Frame time: {fram_time_ms:.1f} ms', False, DEBUG_TEXT_COLOR)
+        work_time_percentage = self._work_time_ms / Game.MAX_FRAME_TIME_MS * 100
+        text_surface = self._debug_font.render(f'Frame time: {self._work_time_ms}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({work_time_percentage:.0f}%)', False, DEBUG_TEXT_COLOR)
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
@@ -180,6 +183,7 @@ class Game:
 
     def mainloop(self) -> None:
         quit_game = False
+        work_loop_start_ms = pygame.time.get_ticks()
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -232,5 +236,9 @@ class Game:
                 self._display_debug()
 
             pygame.display.update()
+
+            self._work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
             frame_time_ms = self._fps_clock.tick(60.0)
             self._frame_time = frame_time_ms / 1000
+
+            work_loop_start_ms = pygame.time.get_ticks()
