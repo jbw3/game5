@@ -3,6 +3,7 @@ import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
 
+from asteroid import Asteroid
 from person import Person
 from ship import Ship
 
@@ -59,6 +60,14 @@ class Game:
     @property
     def solid_sprites(self) -> pygame.sprite.Group:
         return self._solid_sprites
+
+    @property
+    def interior_view_size(self) -> tuple[int, int]:
+        return self._interior_view_surface.get_size()
+
+    @property
+    def flight_view_size(self) -> tuple[int, int]:
+        return self._flight_view_surface.get_size()
 
     @property
     def ship(self) -> Ship:
@@ -172,9 +181,21 @@ class Game:
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
-        self._ship = Ship(self, interior_view_center, self._flight_view_surface.get_size())
-        people: list[Person] = []
+        flight_view_size = self._flight_view_surface.get_size()
+        flight_view_width, flight_view_height = flight_view_size
 
+        # create ship
+        self._ship = Ship(self, interior_view_center)
+
+        # create asteroids
+        num_asteroids = 3
+        for _ in range(num_asteroids):
+            x = random.randint(0, flight_view_width - 1)
+            y = random.randint(0, flight_view_height // 10)
+            asteroid = Asteroid(self, (x, y))
+
+        # create people
+        people: list[Person] = []
         y = interior_view_center[1] - 40
         for joystick in self._joysticks:
             person = Person(self, (interior_view_center[0], y), joystick)

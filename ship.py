@@ -11,10 +11,9 @@ class Ship:
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
 
-    def __init__(self, game: 'Game', interior_view_center: tuple[int, int], flight_view_size: tuple[int, int]):
-        self._flight_view_size = flight_view_size
+    def __init__(self, game: 'Game', interior_view_center: tuple[int, int]):
 
-        flight_view_center = (flight_view_size[0] // 2, flight_view_size[1] // 2)
+        flight_view_center = (game.flight_view_size[0] // 2, game.flight_view_size[1] // 2)
         self._x = float(flight_view_center[0])
         self._y = float(flight_view_center[1])
         self._dx = 0.0
@@ -161,17 +160,17 @@ class Ship:
         self._flight_sprite.rect.center = (int(self._x), int(self._y))
 
         # wrap around if the ship goes past the top or bottom of the screen
-        if self._flight_sprite.rect.top >= self._flight_view_size[1]:
+        if self._flight_sprite.rect.top >= game.flight_view_size[1]:
             self._flight_sprite.rect.bottom = 0
             self._y = float(self._flight_sprite.rect.centery)
         elif self._flight_sprite.rect.bottom <= 0:
-            self._flight_sprite.rect.top = self._flight_view_size[1]
+            self._flight_sprite.rect.top = game.flight_view_size[1]
             self._y = float(self._flight_sprite.rect.centery)
 
         # wrap around if the ship goes past the left or right of the screen
-        if self._flight_sprite.rect.left >= self._flight_view_size[0]:
+        if self._flight_sprite.rect.left >= game.flight_view_size[0]:
             self._flight_sprite.rect.right = 0
             self._x = float(self._flight_sprite.rect.centerx)
         elif self._flight_sprite.rect.right <= 0:
-            self._flight_sprite.rect.left = self._flight_view_size[0]
+            self._flight_sprite.rect.left = game.flight_view_size[0]
             self._x = float(self._flight_sprite.rect.centerx)
