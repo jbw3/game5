@@ -175,5 +175,11 @@ class Ship:
             self._flight_sprite.rect.left = game.flight_view_size[0]
             self._x = float(self._flight_sprite.rect.centerx)
 
+        collision = False
         for sprite in pygame.sprite.spritecollide(self._flight_sprite, game.flight_collision_sprites, False):
             sprite.collide(game)
+            collision = True
+
+        if collision:
+            game.flight_view_sprites.remove(self._flight_sprite)
+            game.end_mission()

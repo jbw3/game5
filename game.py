@@ -13,6 +13,8 @@ class Game:
     MAX_FPS = 60.0
     MAX_FRAME_TIME_MS = 1000 / MAX_FPS
 
+    RESET_GAME_EVENT = pygame.event.custom_type()
+
     def __init__(self):
         pygame.init()
         pygame.font.init()
@@ -44,6 +46,7 @@ class Game:
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
+        self._playing_mission = False
         self._ship: Ship|None = None
 
     @property
@@ -182,12 +185,22 @@ class Game:
 
         return surface
 
+    def _reset_game(self) -> None:
+        self._interior_view_sprites.empty()
+        self._flight_view_sprites.empty()
+        self._interior_solid_sprites.empty()
+        self._flight_collision_sprites.empty()
+
+        self._ship = None
+
     def start_mission(self) -> None:
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, flight_view_height = flight_view_size
+
+        self._playing_mission = True
 
         # create ship
         self._ship = Ship(self, interior_view_center)
@@ -206,6 +219,10 @@ class Game:
             person = Person(self, (interior_view_center[0], y), joystick)
             people.append(person)
             y += 20
+
+    def end_mission(self) -> None:
+        self._playing_mission = False
+        pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
 
     def mainloop(self) -> None:
         quit_game = False
@@ -236,11 +253,13 @@ class Game:
                         if joystick.get_id() == idx:
                             self._joysticks.pop(idx)
                             break
+                elif event.type == Game.RESET_GAME_EVENT:
+                    self._reset_game()
 
             if quit_game:
                 break
 
-            if self._ship is not None:
+            if self._playing_mission and self._ship is not None:
                 self._ship.update(self)
             for sprite in self.interior_view_sprites:
                 sprite.update(self)
