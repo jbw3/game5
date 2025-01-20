@@ -20,7 +20,7 @@ class Asteroid(pygame.sprite.Sprite):
     ]
     MEDIUM_IMAGES = [
         pygame.image.load(os.path.join('images', f'asteroid_medium{i+1}.png'))
-        for i in range(1)
+        for i in range(2)
     ]
     BIG_IMAGES = [
         pygame.image.load(os.path.join('images', f'asteroid_big{i+1}.png'))
