@@ -2,9 +2,38 @@ import os
 import pygame
 from typing import TYPE_CHECKING
 
+from person import Person
+
 if TYPE_CHECKING:
     from game import Game
-    from person import Person
+
+class Console(pygame.sprite.Sprite):
+    PILOT_CONSOLE_IMAGE = pygame.image.load(os.path.join('images', 'pilot_console.png'))
+    WEAPON_CONSOLE_IMAGE = pygame.image.load(os.path.join('images', 'weapon_console.png'))
+
+    def __init__(self, game: 'Game', image: pygame.surface.Surface):
+        super().__init__()
+
+        self.image = image
+        self.rect = self.image.get_rect()
+
+        game.interior_view_sprites.add(self)
+        game.interior_solid_sprites.add(self)
+
+        self._person: Person|None = None
+
+    @property
+    def person(self) -> Person|None:
+        return self._person
+
+    def activate(self, person: Person) -> None:
+        self._person = person
+
+        self.person.rect.centerx = self.rect.centerx
+        self.person.rect.top = self.rect.bottom + 4
+
+    def deactivate(self) -> None:
+        self._person = None
 
 class Ship:
     MAX_ACCELERATION = 5.0
@@ -105,15 +134,19 @@ class Ship:
             game.interior_view_sprites.add(wall)
             game.interior_solid_sprites.add(wall)
 
-        self._pilot_console = pygame.sprite.Sprite()
-        self._pilot_console.image = pygame.image.load(os.path.join('images', 'pilot_console.png'))
-        self._pilot_console.rect = self._pilot_console.image.get_rect()
+        self._consoles: list[Console] = []
+
+        # pilot console
+        self._pilot_console = Console(game, Console.PILOT_CONSOLE_IMAGE)
         self._pilot_console.rect.centerx = floor1.rect.centerx
         self._pilot_console.rect.top = floor1.rect.top
-        game.interior_view_sprites.add(self._pilot_console)
-        game.interior_solid_sprites.add(self._pilot_console)
+        self._consoles.append(self._pilot_console)
 
-        self._pilot_console_person: Person|None = None
+        # weapon consoles
+        weapon_console = Console(game, Console.WEAPON_CONSOLE_IMAGE)
+        weapon_console.rect.left = floor1.rect.left
+        weapon_console.rect.top = floor1.rect.top + 40
+        self._consoles.append(weapon_console)
 
         # flight view image
         ship_image_size = background_image.get_size()
@@ -125,32 +158,29 @@ class Ship:
         self._flight_sprite.rect.center = flight_view_center
         game.flight_view_sprites.add(self._flight_sprite)
 
-        self._joystick: pygame.joystick.JoystickType|None = None
-
     def try_activate_console(self, person: 'Person') -> bool:
-        console_rect: pygame.rect.Rect = self._pilot_console.rect.inflate(4, 20)
-        if self._pilot_console_person is not None or not console_rect.colliderect(person.rect):
-            return False
+        for console in self._consoles:
+            console_rect: pygame.rect.Rect = console.rect.inflate(4, 20)
+            if console.person is None and console_rect.colliderect(person.rect):
+                console.activate(person)
+                return True
 
-        self._pilot_console_person = person
-        self._joystick = person.joystick
-
-        self._pilot_console_person.rect.centerx = self._pilot_console.rect.centerx
-        self._pilot_console_person.rect.top = self._pilot_console.rect.bottom + 4
-
-        return True
+        return False
 
     def deactivate_console(self, person: 'Person') -> None:
-        self._pilot_console_person = None
-        self._joystick = None
+        for console in self._consoles:
+            if console.person is person:
+                console.deactivate()
+                break
 
     def update(self, game: 'Game') -> None:
-        if self._joystick is not None:
-            a0 = self._joystick.get_axis(0)
+        if self._pilot_console.person is not None:
+            joystick = self._pilot_console.person.joystick
+            a0 = joystick.get_axis(0)
             if a0 < -0.2 or a0 > 0.2:
                 self._dx += a0 * Ship.MAX_ACCELERATION
 
-            a1 = self._joystick.get_axis(1)
+            a1 = joystick.get_axis(1)
             if a1 < -0.2 or a1 > 0.2:
                 self._dy += a1 * Ship.MAX_ACCELERATION
 
