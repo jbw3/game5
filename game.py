@@ -295,7 +295,7 @@ class Game:
             pygame.display.update()
 
             self._work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
-            frame_time_ms = self._fps_clock.tick(60.0)
+            frame_time_ms = self._fps_clock.tick(Game.MAX_FPS)
             self._frame_time = frame_time_ms / 1000
 
             work_loop_start_ms = pygame.time.get_ticks()
