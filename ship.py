@@ -1,5 +1,6 @@
 import os
 import pygame
+import random
 from typing import TYPE_CHECKING, override
 
 from laser import Laser
@@ -156,6 +157,11 @@ class Ship:
         self._y = float(flight_view_center[1])
         self._dx = 0.0
         self._dy = 0.0
+
+        # start ship with a small, random velocity
+        while abs(self._dx) < 1.0 and abs(self._dy) < 1.0:
+            self._dx = random.random() * 10 - 5
+            self._dy = random.random() * 10 - 5
 
         self._next_available_laser_fire = [0, 0]
 
