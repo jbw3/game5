@@ -2,6 +2,7 @@ import os
 import pygame
 from typing import TYPE_CHECKING, override
 
+from laser import Laser
 from person import Person
 
 if TYPE_CHECKING:
@@ -35,7 +36,7 @@ class Console(pygame.sprite.Sprite):
     def deactivate(self) -> None:
         self._person = None
 
-    def update_ship(self, ship: 'Ship') -> None:
+    def update_ship(self, game: 'Game', ship: 'Ship') -> None:
         pass
 
 class PilotConsole(Console):
@@ -43,7 +44,7 @@ class PilotConsole(Console):
         super().__init__(game, Console.PILOT_CONSOLE_IMAGE)
 
     @override
-    def update_ship(self, ship: 'Ship') -> None:
+    def update_ship(self, game: 'Game', ship: 'Ship') -> None:
         if self._person is not None:
             joystick = self._person.joystick
 
@@ -65,18 +66,28 @@ class WeaponConsole(Console):
     def __init__(self, game: 'Game'):
         super().__init__(game, Console.WEAPON_CONSOLE_IMAGE)
 
+    @override
+    def update_ship(self, game: 'Game', ship: 'Ship') -> None:
+        if self._person is not None:
+            joystick = self._person.joystick
+
+            if joystick.get_button(5):
+                ship.fire_laser(game)
+
 class Ship:
     MAX_ACCELERATION = 5.0
+    LASER_DELAY = 800 # ms
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
 
     def __init__(self, game: 'Game', interior_view_center: tuple[int, int]):
-
         flight_view_center = (game.flight_view_size[0] // 2, game.flight_view_size[1] // 2)
         self._x = float(flight_view_center[0])
         self._y = float(flight_view_center[1])
         self._dx = 0.0
         self._dy = 0.0
+
+        self._next_available_laser_fire = 0
 
         background_image = pygame.image.load(os.path.join('images', 'ship1.png'))
         background_sprite = pygame.sprite.Sprite()
@@ -210,9 +221,15 @@ class Ship:
         self._dx += x_accel
         self._dy += y_accel
 
+    def fire_laser(self, game: 'Game') -> None:
+        ticks = pygame.time.get_ticks()
+        if ticks >= self._next_available_laser_fire:
+            Laser(game, self._flight_sprite.rect.center, 0.0)
+            self._next_available_laser_fire = ticks + Ship.LASER_DELAY
+
     def update(self, game: 'Game') -> None:
         for console in self._consoles:
-            console.update_ship(self)
+            console.update_ship(game, self)
 
         self._x += self._dx * game.frame_time
         self._y += self._dy * game.frame_time
