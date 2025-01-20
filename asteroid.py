@@ -7,14 +7,17 @@ if TYPE_CHECKING:
     from game import Game
 
 class Asteroid(pygame.sprite.Sprite):
-    BIG_IMAGE = pygame.image.load(os.path.join('images', 'asteroid_big1.png'))
+    BIG_IMAGES = [
+        pygame.image.load(os.path.join('images', f'asteroid_big{i+1}.png'))
+        for i in range(2)
+    ]
     MIN_SPEED = 1
     MAX_SPEED = 120
 
     def __init__(self, game: 'Game', center: tuple[int, int]):
         super().__init__()
 
-        self.image = Asteroid.BIG_IMAGE
+        self.image = random.choice(Asteroid.BIG_IMAGES)
         self.rect = self.image.get_rect()
         self.rect.center = center
 
