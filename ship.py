@@ -1,4 +1,3 @@
-import math
 import os
 import pygame
 from typing import TYPE_CHECKING, override
@@ -90,7 +89,7 @@ class WeaponConsole(Console):
                 ship.rotate_aim_clockwise(self._weapon_index)
 
             if joystick.get_button(5):
-                ship.fire_laser()
+                ship.fire_laser(self._weapon_index)
 
 class AimSprite(pygame.sprite.Sprite):
     LENGTH = 80
@@ -146,7 +145,7 @@ class Ship:
         self._dx = 0.0
         self._dy = 0.0
 
-        self._next_available_laser_fire = 0
+        self._next_available_laser_fire = [0, 0]
 
         background_image = pygame.image.load(os.path.join('images', 'ship1.png'))
         background_sprite = pygame.sprite.Sprite()
@@ -303,11 +302,12 @@ class Ship:
     def rotate_aim_counterclockwise(self, weapon_index: int) -> None:
         self._aiming[weapon_index].angle += Ship.AIM_ANGLE_RATE * self.game.frame_time
 
-    def fire_laser(self) -> None:
+    def fire_laser(self, weapon_index: int) -> None:
         ticks = pygame.time.get_ticks()
-        if ticks >= self._next_available_laser_fire:
-            Laser(self.game, self._flight_sprite.rect.center, 0.0)
-            self._next_available_laser_fire = ticks + Ship.LASER_DELAY
+        if ticks >= self._next_available_laser_fire[weapon_index]:
+            angle = self._aiming[weapon_index].angle
+            Laser(self.game, self._flight_sprite.rect.center, angle)
+            self._next_available_laser_fire[weapon_index] = ticks + Ship.LASER_DELAY
 
     def update(self, game: 'Game') -> None:
         for console in self._consoles:
