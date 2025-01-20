@@ -1,6 +1,6 @@
 import os
 import pygame
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from person import Person
 
@@ -34,6 +34,36 @@ class Console(pygame.sprite.Sprite):
 
     def deactivate(self) -> None:
         self._person = None
+
+    def update_ship(self, ship: 'Ship') -> None:
+        pass
+
+class PilotConsole(Console):
+    def __init__(self, game: 'Game'):
+        super().__init__(game, Console.PILOT_CONSOLE_IMAGE)
+
+    @override
+    def update_ship(self, ship: 'Ship') -> None:
+        if self._person is not None:
+            joystick = self._person.joystick
+
+            a0 = joystick.get_axis(0)
+            if a0 < -0.2 or a0 > 0.2:
+                x_accel = a0 * Ship.MAX_ACCELERATION
+            else:
+                x_accel = 0.0
+
+            a1 = joystick.get_axis(1)
+            if a1 < -0.2 or a1 > 0.2:
+                y_accel = a1 * Ship.MAX_ACCELERATION
+            else:
+                y_accel = 0.0
+
+            ship.accelerate(x_accel, y_accel)
+
+class WeaponConsole(Console):
+    def __init__(self, game: 'Game'):
+        super().__init__(game, Console.WEAPON_CONSOLE_IMAGE)
 
 class Ship:
     MAX_ACCELERATION = 5.0
@@ -137,16 +167,19 @@ class Ship:
         self._consoles: list[Console] = []
 
         # pilot console
-        self._pilot_console = Console(game, Console.PILOT_CONSOLE_IMAGE)
-        self._pilot_console.rect.centerx = floor1.rect.centerx
-        self._pilot_console.rect.top = floor1.rect.top
-        self._consoles.append(self._pilot_console)
+        pilot_console = PilotConsole(game)
+        pilot_console.rect.centerx = floor1.rect.centerx
+        pilot_console.rect.top = floor1.rect.top
+        self._consoles.append(pilot_console)
 
         # weapon consoles
-        weapon_console = Console(game, Console.WEAPON_CONSOLE_IMAGE)
-        weapon_console.rect.left = floor1.rect.left
-        weapon_console.rect.top = floor1.rect.top + 40
-        self._consoles.append(weapon_console)
+        top = floor1.rect.top + 25
+        for _ in range(2):
+            weapon_console = WeaponConsole(game)
+            weapon_console.rect.left = floor1.rect.left
+            weapon_console.rect.top = top
+            self._consoles.append(weapon_console)
+            top += 35
 
         # flight view image
         ship_image_size = background_image.get_size()
@@ -173,16 +206,13 @@ class Ship:
                 console.deactivate()
                 break
 
-    def update(self, game: 'Game') -> None:
-        if self._pilot_console.person is not None:
-            joystick = self._pilot_console.person.joystick
-            a0 = joystick.get_axis(0)
-            if a0 < -0.2 or a0 > 0.2:
-                self._dx += a0 * Ship.MAX_ACCELERATION
+    def accelerate(self, x_accel: float, y_accel: float) -> None:
+        self._dx += x_accel
+        self._dy += y_accel
 
-            a1 = joystick.get_axis(1)
-            if a1 < -0.2 or a1 > 0.2:
-                self._dy += a1 * Ship.MAX_ACCELERATION
+    def update(self, game: 'Game') -> None:
+        for console in self._consoles:
+            console.update_ship(self)
 
         self._x += self._dx * game.frame_time
         self._y += self._dy * game.frame_time
