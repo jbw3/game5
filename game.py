@@ -48,6 +48,8 @@ class Game:
 
         self._playing_mission = False
         self._ship: Ship|None = None
+        self._asteroid_count = 0
+        self._asteroid_create_count = 0
 
     @property
     def frame_time(self) -> float:
@@ -81,6 +83,12 @@ class Game:
     def ship(self) -> Ship:
         assert self._ship is not None, 'ship is None'
         return self._ship
+
+    def update_asteroid_count(self, change: int) -> None:
+        self._asteroid_count += change
+
+        if self._asteroid_count == 0:
+            self._create_asteroids()
 
     def _display_debug(self) -> None:
         y = 0
@@ -193,24 +201,27 @@ class Game:
 
         self._ship = None
 
+    def _create_asteroids(self) -> None:
+        flight_view_size = self._flight_view_surface.get_size()
+        flight_view_width, flight_view_height = flight_view_size
+
+        self._asteroid_create_count += 1
+        self._asteroid_count = self._asteroid_create_count
+        for _ in range(self._asteroid_count):
+            x = random.randint(0, flight_view_width - 1)
+            y = random.randint(0, flight_view_height // 10)
+            Asteroid(self, Asteroid.Size.Big, (x, y))
+
     def start_mission(self) -> None:
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
-
-        flight_view_size = self._flight_view_surface.get_size()
-        flight_view_width, flight_view_height = flight_view_size
 
         self._playing_mission = True
 
         # create ship
         self._ship = Ship(self, interior_view_center)
 
-        # create asteroids
-        num_asteroids = 3
-        for _ in range(num_asteroids):
-            x = random.randint(0, flight_view_width - 1)
-            y = random.randint(0, flight_view_height // 10)
-            Asteroid(self, Asteroid.Size.Big, (x, y))
+        self._create_asteroids()
 
         # create people
         people: list[Person] = []

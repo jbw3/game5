@@ -87,7 +87,9 @@ class Asteroid(pygame.sprite.Sprite):
         game.flight_view_sprites.remove(self)
         game.flight_collision_sprites.remove(self)
 
-        if self._size != Asteroid.Size.Small:
+        if self._size == Asteroid.Size.Small:
+            game.update_asteroid_count(-1)
+        else:
             if self._size == Asteroid.Size.Big:
                 new_size = Asteroid.Size.Medium
             else:
@@ -95,3 +97,5 @@ class Asteroid(pygame.sprite.Sprite):
 
             Asteroid(game, new_size, self.rect.center)
             Asteroid(game, new_size, self.rect.center)
+
+            game.update_asteroid_count(1)
