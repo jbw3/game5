@@ -117,6 +117,18 @@ class AimSprite(pygame.sprite.Sprite):
 
         self.image = pygame.transform.rotate(self._orig_image, new_angle)
         self.rect = self.image.get_rect()
+        self._update_position()
+
+    @property
+    def origin(self) -> tuple[int, int]:
+        return self._origin
+
+    @origin.setter
+    def origin(self, new_origin: tuple[int, int]) -> None:
+        self._origin = new_origin
+        self._update_position()
+
+    def _update_position(self) -> None:
         if 0.0 <= self._angle < 90.0:
             self.rect.left = self._origin[0]
             self.rect.bottom = self._origin[1]
@@ -267,8 +279,7 @@ class Ship:
             (0, 240, 0),
         ]
         for i in range(2):
-            origin = (self._flight_sprite.rect.centerx, self._flight_sprite.rect.centery)
-            aim_sprite = AimSprite(colors[i], origin)
+            aim_sprite = AimSprite(colors[i], self._flight_sprite.rect.center)
             self._aiming.append(aim_sprite)
 
     def try_activate_console(self, person: 'Person') -> bool:
@@ -333,6 +344,9 @@ class Ship:
         elif self._flight_sprite.rect.right <= 0:
             self._flight_sprite.rect.left = game.flight_view_size[0]
             self._x = float(self._flight_sprite.rect.centerx)
+
+        for aiming in self._aiming:
+            aiming.origin = self._flight_sprite.rect.center
 
         collision = False
         for sprite in pygame.sprite.spritecollide(self._flight_sprite, game.flight_collision_sprites, False):
