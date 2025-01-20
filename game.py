@@ -221,6 +221,7 @@ class Game:
         # create ship
         self._ship = Ship(self, interior_view_center)
 
+        self._asteroid_create_count = 0
         self._create_asteroids()
 
         # create people

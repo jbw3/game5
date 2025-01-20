@@ -144,8 +144,8 @@ class AimSprite(pygame.sprite.Sprite):
 
 class Ship:
     MAX_ACCELERATION = 5.0
-    LASER_DELAY = 800 # ms
-    AIM_ANGLE_RATE = 90.0 # degrees
+    LASER_DELAY = 600 # ms
+    AIM_ANGLE_RATE = 120.0 # degrees
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
 
