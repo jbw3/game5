@@ -103,7 +103,7 @@ class Ship:
 
         for wall in self._walls:
             game.interior_view_sprites.add(wall)
-            game.solid_sprites.add(wall)
+            game.interior_solid_sprites.add(wall)
 
         self._pilot_console = pygame.sprite.Sprite()
         self._pilot_console.image = pygame.image.load(os.path.join('images', 'pilot_console.png'))
@@ -111,7 +111,7 @@ class Ship:
         self._pilot_console.rect.centerx = floor1.rect.centerx
         self._pilot_console.rect.top = floor1.rect.top
         game.interior_view_sprites.add(self._pilot_console)
-        game.solid_sprites.add(self._pilot_console)
+        game.interior_solid_sprites.add(self._pilot_console)
 
         self._pilot_console_person: Person|None = None
 
@@ -174,3 +174,6 @@ class Ship:
         elif self._flight_sprite.rect.right <= 0:
             self._flight_sprite.rect.left = game.flight_view_size[0]
             self._x = float(self._flight_sprite.rect.centerx)
+
+        for sprite in pygame.sprite.spritecollide(self._flight_sprite, game.flight_collision_sprites, False):
+            sprite.collide(game)

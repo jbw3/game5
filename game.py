@@ -39,7 +39,8 @@ class Game:
 
         self._interior_view_sprites = pygame.sprite.Group()
         self._flight_view_sprites = pygame.sprite.Group()
-        self._solid_sprites = pygame.sprite.Group()
+        self._interior_solid_sprites = pygame.sprite.Group()
+        self._flight_collision_sprites = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
@@ -58,8 +59,12 @@ class Game:
         return self._flight_view_sprites
 
     @property
-    def solid_sprites(self) -> pygame.sprite.Group:
-        return self._solid_sprites
+    def interior_solid_sprites(self) -> pygame.sprite.Group:
+        return self._interior_solid_sprites
+
+    @property
+    def flight_collision_sprites(self) -> pygame.sprite.Group:
+        return self._flight_collision_sprites
 
     @property
     def interior_view_size(self) -> tuple[int, int]:
@@ -192,7 +197,7 @@ class Game:
         for _ in range(num_asteroids):
             x = random.randint(0, flight_view_width - 1)
             y = random.randint(0, flight_view_height // 10)
-            asteroid = Asteroid(self, (x, y))
+            Asteroid(self, Asteroid.Size.Big, (x, y))
 
         # create people
         people: list[Person] = []

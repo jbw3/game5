@@ -68,7 +68,7 @@ class Person(pygame.sprite.Sprite):
 
         self.rect.center = (int(self._x), int(self._y))
 
-        for sprite in pygame.sprite.spritecollide(self, game.solid_sprites, False):
+        for sprite in pygame.sprite.spritecollide(self, game.interior_solid_sprites, False):
             if last_rect.top >= sprite.rect.bottom:
                 self.rect.top = sprite.rect.bottom
                 self._y = float(self.rect.centery)
