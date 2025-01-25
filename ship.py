@@ -144,6 +144,8 @@ class Ship:
     AIM_ANGLE_RATE = 120.0 # degrees
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
+    FLOOR_WIDTH = 100
+    WALL_WIDTH = 10
 
     def __init__(self, game: 'Game', interior_view_center: tuple[int, int]):
         self.game = game
@@ -165,61 +167,42 @@ class Ship:
         background_sprite.rect.center = interior_view_center
         game.interior_view_sprites.add(background_sprite)
 
-        wall_width = 10
         self._floor: list[pygame.sprite.Sprite] = []
         self._walls: list[pygame.sprite.Sprite] = []
 
-        surface = pygame.surface.Surface((100, 100))
+        surface = pygame.surface.Surface((Ship.FLOOR_WIDTH, Ship.FLOOR_WIDTH))
         surface.fill(Ship.FLOOR_COLOR)
         floor1 = Sprite(surface)
         floor1.rect.center = (interior_view_center[0], interior_view_center[1] - 50)
         self._floor.append(floor1)
 
-        surface = pygame.surface.Surface((100, 100))
+        surface = pygame.surface.Surface((Ship.FLOOR_WIDTH, Ship.FLOOR_WIDTH))
         surface.fill(Ship.FLOOR_COLOR)
         floor2 = Sprite(surface)
         floor2.rect.topleft = (floor1.rect.left, floor1.rect.bottom)
         self._floor.append(floor2)
 
         # top wall
-        surface = pygame.surface.Surface((100 + wall_width*2, wall_width))
-        surface.fill(Ship.WALL_COLOR)
-        wall = Sprite(surface)
-        wall.rect.bottomleft = (floor1.rect.left - wall_width, floor1.rect.top)
-        self._walls.append(wall)
+        wall = self._create_wall(Ship.FLOOR_WIDTH + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
+        wall.rect.bottomleft = (floor1.rect.left - Ship.WALL_WIDTH, floor1.rect.top)
 
         # bottom wall
-        surface = pygame.surface.Surface((100 + wall_width*2, wall_width))
-        surface.fill(Ship.WALL_COLOR)
-        wall = Sprite(surface)
-        wall.rect.topleft = (floor2.rect.left - wall_width, floor2.rect.bottom)
-        self._walls.append(wall)
+        wall = self._create_wall(Ship.FLOOR_WIDTH + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
+        wall.rect.topleft = (floor2.rect.left - Ship.WALL_WIDTH, floor2.rect.bottom)
 
         # left wall
-        surface = pygame.surface.Surface((wall_width, 200))
-        surface.fill(Ship.WALL_COLOR)
-        wall = Sprite(surface)
+        wall = self._create_wall(Ship.WALL_WIDTH, Ship.FLOOR_WIDTH*2)
         wall.rect.topright = (floor1.rect.left, floor1.rect.top)
-        self._walls.append(wall)
 
         # right wall
-        surface = pygame.surface.Surface((wall_width, 200))
-        surface.fill(Ship.WALL_COLOR)
-        wall = Sprite(surface)
+        wall = self._create_wall(Ship.WALL_WIDTH, Ship.FLOOR_WIDTH*2)
         wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
-        self._walls.append(wall)
 
-        surface = pygame.surface.Surface((38, wall_width))
-        surface.fill(Ship.WALL_COLOR)
-        wall = Sprite(surface)
-        wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - wall_width//2)
-        self._walls.append(wall)
+        wall = self._create_wall(38, Ship.WALL_WIDTH)
+        wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - Ship.WALL_WIDTH//2)
 
-        surface = pygame.surface.Surface((38, wall_width))
-        surface.fill(Ship.WALL_COLOR)
-        wall = Sprite(surface)
-        wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - wall_width//2)
-        self._walls.append(wall)
+        wall = self._create_wall(38, Ship.WALL_WIDTH)
+        wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - Ship.WALL_WIDTH//2)
 
         for floor in self._floor:
             game.interior_view_sprites.add(floor)
@@ -262,6 +245,13 @@ class Ship:
         for i in range(2):
             aim_sprite = AimSprite(colors[i], self._flight_sprite.rect.center)
             self._aiming.append(aim_sprite)
+
+    def _create_wall(self, width: int, height: int) -> Sprite:
+        surface = pygame.surface.Surface((width, height))
+        surface.fill(Ship.WALL_COLOR)
+        wall = Sprite(surface)
+        self._walls.append(wall)
+        return wall
 
     def try_activate_console(self, person: 'Person') -> bool:
         for console in self._consoles:
