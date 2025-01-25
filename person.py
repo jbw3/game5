@@ -4,22 +4,22 @@ import os
 import pygame
 from typing import TYPE_CHECKING, override
 
+from sprite import Sprite
+
 if TYPE_CHECKING:
     from game import Game
 
-class Person(pygame.sprite.Sprite):
+class Person(Sprite):
     @unique
     class State(Enum):
         Moving = 0
         Console = 1
 
+    IMAGE = pygame.image.load(os.path.join('images', 'person.png'))
     MAX_SPEED = 60.0
 
     def __init__(self, game: 'Game', center: tuple[int, int], joystick: pygame.joystick.JoystickType):
-        super().__init__()
-
-        self.image = pygame.image.load(os.path.join('images', 'person.png'))
-        self.rect = self.image.get_rect()
+        super().__init__(Person.IMAGE)
         self.rect.center = center
 
         self._x = float(center[0])

@@ -3,19 +3,18 @@ import os
 import pygame
 from typing import TYPE_CHECKING, override
 
+from sprite import Sprite
+
 if TYPE_CHECKING:
     from game import Game
 
-class Laser(pygame.sprite.Sprite):
+class Laser(Sprite):
     RED_IMAGE = pygame.image.load(os.path.join('images', 'laser_red.png'))
 
     SPEED = 1000
 
     def __init__(self, game: 'Game', center: tuple[int, int], angle: float):
-        super().__init__()
-
-        self.image = pygame.transform.rotate(Laser.RED_IMAGE, angle)
-        self.rect = self.image.get_rect()
+        super().__init__(pygame.transform.rotate(Laser.RED_IMAGE, angle))
         self.rect.center = center
 
         game.flight_view_sprites.add(self)

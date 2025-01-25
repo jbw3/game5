@@ -4,10 +4,12 @@ import pygame
 import random
 from typing import TYPE_CHECKING, override
 
+from sprite import Sprite
+
 if TYPE_CHECKING:
     from game import Game
 
-class Asteroid(pygame.sprite.Sprite):
+class Asteroid(Sprite):
     @unique
     class Size(Enum):
         Small = 0
@@ -29,7 +31,6 @@ class Asteroid(pygame.sprite.Sprite):
     MAX_SPEED = 120
 
     def __init__(self, game: 'Game', size: 'Asteroid.Size', center: tuple[int, int]):
-        super().__init__()
 
         self._size = size
         match size:
@@ -42,8 +43,7 @@ class Asteroid(pygame.sprite.Sprite):
             case _:
                 assert False, f'Unknown asteroid size: {size}'
 
-        self.image = random.choice(images)
-        self.rect = self.image.get_rect()
+        super().__init__(random.choice(images))
         self.rect.center = center
 
         game.flight_view_sprites.add(self)

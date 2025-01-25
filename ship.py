@@ -5,19 +5,17 @@ from typing import TYPE_CHECKING, override
 
 from laser import Laser
 from person import Person
+from sprite import Sprite
 
 if TYPE_CHECKING:
     from game import Game
 
-class Console(pygame.sprite.Sprite):
+class Console(Sprite):
     PILOT_CONSOLE_IMAGE = pygame.image.load(os.path.join('images', 'pilot_console.png'))
     WEAPON_CONSOLE_IMAGE = pygame.image.load(os.path.join('images', 'weapon_console.png'))
 
     def __init__(self, game: 'Game', image: pygame.surface.Surface):
-        super().__init__()
-
-        self.image = image
-        self.rect = self.image.get_rect()
+        super().__init__(image)
 
         game.interior_view_sprites.add(self)
         game.interior_solid_sprites.add(self)
@@ -31,8 +29,8 @@ class Console(pygame.sprite.Sprite):
     def activate(self, ship: 'Ship', person: Person) -> None:
         self._person = person
 
-        self.person.rect.centerx = self.rect.centerx
-        self.person.rect.top = self.rect.bottom + 4
+        self._person.rect.centerx = self.rect.centerx
+        self._person.rect.top = self.rect.bottom + 4
 
     def deactivate(self, ship: 'Ship') -> None:
         self._person = None
@@ -92,18 +90,15 @@ class WeaponConsole(Console):
             if joystick.get_button(5):
                 ship.fire_laser(self._weapon_index)
 
-class AimSprite(pygame.sprite.Sprite):
+class AimSprite(Sprite):
     LENGTH = 80
 
     def __init__(self, color: tuple[int, int, int], origin: tuple[int, int]):
-        super().__init__()
         self._orig_image = pygame.surface.Surface((AimSprite.LENGTH, 3))
         self._orig_image.fill((0, 0, 0))
         self._orig_image.set_colorkey((0, 0, 0))
         pygame.draw.line(self._orig_image, color, (0, 1), (AimSprite.LENGTH - 1, 1))
-
-        self.image = self._orig_image
-        self.rect = self.image.get_rect()
+        super().__init__(self._orig_image)
 
         self._origin = origin
         self.angle = 90.0
@@ -166,9 +161,7 @@ class Ship:
         self._next_available_laser_fire = [0, 0]
 
         background_image = pygame.image.load(os.path.join('images', 'ship1.png'))
-        background_sprite = pygame.sprite.Sprite()
-        background_sprite.image = background_image
-        background_sprite.rect = background_image.get_rect()
+        background_sprite = Sprite(background_image)
         background_sprite.rect.center = interior_view_center
         game.interior_view_sprites.add(background_sprite)
 
@@ -178,69 +171,53 @@ class Ship:
 
         surface = pygame.surface.Surface((100, 100))
         surface.fill(Ship.FLOOR_COLOR)
-        floor1 = pygame.sprite.Sprite()
-        floor1.image = surface
-        floor1.rect = floor1.image.get_rect()
+        floor1 = Sprite(surface)
         floor1.rect.center = (interior_view_center[0], interior_view_center[1] - 50)
         self._floor.append(floor1)
 
         surface = pygame.surface.Surface((100, 100))
         surface.fill(Ship.FLOOR_COLOR)
-        floor2 = pygame.sprite.Sprite()
-        floor2.image = surface
-        floor2.rect = floor2.image.get_rect()
+        floor2 = Sprite(surface)
         floor2.rect.topleft = (floor1.rect.left, floor1.rect.bottom)
         self._floor.append(floor2)
 
         # top wall
         surface = pygame.surface.Surface((100 + wall_width*2, wall_width))
         surface.fill(Ship.WALL_COLOR)
-        wall = pygame.sprite.Sprite()
-        wall.image = surface
-        wall.rect = surface.get_rect()
+        wall = Sprite(surface)
         wall.rect.bottomleft = (floor1.rect.left - wall_width, floor1.rect.top)
         self._walls.append(wall)
 
         # bottom wall
         surface = pygame.surface.Surface((100 + wall_width*2, wall_width))
         surface.fill(Ship.WALL_COLOR)
-        wall = pygame.sprite.Sprite()
-        wall.image = surface
-        wall.rect = surface.get_rect()
+        wall = Sprite(surface)
         wall.rect.topleft = (floor2.rect.left - wall_width, floor2.rect.bottom)
         self._walls.append(wall)
 
         # left wall
         surface = pygame.surface.Surface((wall_width, 200))
         surface.fill(Ship.WALL_COLOR)
-        wall = pygame.sprite.Sprite()
-        wall.image = surface
-        wall.rect = surface.get_rect()
+        wall = Sprite(surface)
         wall.rect.topright = (floor1.rect.left, floor1.rect.top)
         self._walls.append(wall)
 
         # right wall
         surface = pygame.surface.Surface((wall_width, 200))
         surface.fill(Ship.WALL_COLOR)
-        wall = pygame.sprite.Sprite()
-        wall.image = surface
-        wall.rect = surface.get_rect()
+        wall = Sprite(surface)
         wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
         self._walls.append(wall)
 
         surface = pygame.surface.Surface((38, wall_width))
         surface.fill(Ship.WALL_COLOR)
-        wall = pygame.sprite.Sprite()
-        wall.image = surface
-        wall.rect = surface.get_rect()
+        wall = Sprite(surface)
         wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - wall_width//2)
         self._walls.append(wall)
 
         surface = pygame.surface.Surface((38, wall_width))
         surface.fill(Ship.WALL_COLOR)
-        wall = pygame.sprite.Sprite()
-        wall.image = surface
-        wall.rect = surface.get_rect()
+        wall = Sprite(surface)
         wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - wall_width//2)
         self._walls.append(wall)
 
@@ -272,9 +249,7 @@ class Ship:
         ship_image_size = background_image.get_size()
         new_size = (ship_image_size[0] // 10, ship_image_size[1] // 10)
         flight_view_image = pygame.transform.scale(background_image, new_size)
-        self._flight_sprite = pygame.sprite.Sprite()
-        self._flight_sprite.image = flight_view_image
-        self._flight_sprite.rect = flight_view_image.get_rect()
+        self._flight_sprite = Sprite(flight_view_image)
         self._flight_sprite.rect.center = flight_view_center
         game.flight_view_sprites.add(self._flight_sprite)
 
