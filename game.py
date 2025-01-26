@@ -43,6 +43,7 @@ class Game:
         self._flight_view_sprites = pygame.sprite.Group()
         self._interior_solid_sprites = pygame.sprite.Group()
         self._flight_collision_sprites = pygame.sprite.Group()
+        self._info_overlay_sprites = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
@@ -70,6 +71,10 @@ class Game:
     @property
     def flight_collision_sprites(self) -> pygame.sprite.Group:
         return self._flight_collision_sprites
+
+    @property
+    def info_overlay_sprites(self) -> pygame.sprite.Group:
+        return self._info_overlay_sprites
 
     @property
     def interior_view_size(self) -> tuple[int, int]:
@@ -198,6 +203,7 @@ class Game:
         self._flight_view_sprites.empty()
         self._interior_solid_sprites.empty()
         self._flight_collision_sprites.empty()
+        self._info_overlay_sprites.empty()
 
         self._ship = None
 
@@ -288,6 +294,8 @@ class Game:
             self._display_surf.blit(self._interior_view_surface, (0, 0))
             self._display_surf.blit(self._flight_view_surface, (window_width // 2, 0))
             self._display_surf.blit(self._divider, (window_width // 2 - 4, 0))
+
+            self._info_overlay_sprites.draw(self._display_surf)
 
             if self._debug:
                 self._display_debug()

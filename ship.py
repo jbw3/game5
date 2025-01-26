@@ -161,6 +161,7 @@ class Ship:
             self._dy = random.random() * 10 - 5
 
         self._next_available_laser_fire = [0, 0]
+        self._hull = 3
 
         background_image = pygame.image.load(os.path.join('images', 'ship1.png'))
         background_sprite = Sprite(background_image)
@@ -228,6 +229,12 @@ class Ship:
             self._consoles.append(weapon_console)
             top += 35
 
+        # hull integrity info
+        self._status_font = pygame.font.SysFont('Arial', 40)
+        self._hull_text = Sprite(pygame.surface.Surface((0, 0)))
+        self._update_hull_info()
+        game.info_overlay_sprites.add(self._hull_text)
+
         # flight view image
         ship_image_size = background_image.get_size()
         new_size = (ship_image_size[0] // 10, ship_image_size[1] // 10)
@@ -252,6 +259,10 @@ class Ship:
         wall = Sprite(surface)
         self._walls.append(wall)
         return wall
+
+    def _update_hull_info(self):
+        self._hull_text.image = self._status_font.render(f'Hull: {self._hull}', True, (252, 10, 30))
+        self._hull_text.rect.bottomleft = (10, self.game.interior_view_size[1] - 10)
 
     def try_activate_console(self, person: 'Person') -> bool:
         for console in self._consoles:
@@ -325,5 +336,8 @@ class Ship:
             collision = True
 
         if collision:
-            game.flight_view_sprites.remove(self._flight_sprite)
-            game.end_mission()
+            self._hull -= 1
+            self._update_hull_info()
+            if self._hull <= 0:
+                game.flight_view_sprites.remove(self._flight_sprite)
+                game.end_mission()
