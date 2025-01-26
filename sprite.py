@@ -4,4 +4,12 @@ class Sprite(pygame.sprite.Sprite):
     def __init__(self, image: pygame.surface.Surface):
         super().__init__()
         self.image = image
-        self.rect = self.image.get_rect()
+
+    @property
+    def image(self) -> pygame.surface.Surface:
+        return self._image
+
+    @image.setter
+    def image(self, value: pygame.surface.Surface) -> None:
+        self._image = value
+        self.rect = self._image.get_rect()
