@@ -290,8 +290,25 @@ class Ship:
             self.game.interior_solid_sprites.add(wall)
 
         door1 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
-        door1.rect.centerx = floor1.rect.centerx
-        door1.rect.centery = floor1.rect.bottom
+        door1.rect.center = (floor1.rect.centerx, floor1.rect.bottom)
+
+        door2 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door2.rect.bottomleft = (floor2.rect.left, floor2.rect.bottom - 1)
+
+        door3 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door3.rect.bottomright = (floor2.rect.right, floor2.rect.bottom - 1)
+
+        door4 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door4.rect.midleft = (floor3.rect.left, floor3.rect.bottom)
+
+        door5 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door5.rect.midright = (floor4.rect.right, floor4.rect.bottom)
+
+        door6 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door6.rect.midleft = (floor5.rect.left, floor5.rect.bottom)
+
+        door7 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door7.rect.midright = (floor6.rect.right, floor6.rect.bottom)
 
         # pilot console
         pilot_console = PilotConsole(self.game)
