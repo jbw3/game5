@@ -309,6 +309,7 @@ class Ship:
         self._x += self._dx * game.frame_time
         self._y += self._dy * game.frame_time
 
+        last_rect = self._flight_sprite.rect.copy()
         self._flight_sprite.rect.center = (int(self._x), int(self._y))
 
         # wrap around if the ship goes past the top or bottom of the screen
@@ -335,7 +336,25 @@ class Ship:
             sprite.collide(game)
             collision = True
 
+            if last_rect.top >= sprite.rect.bottom:
+                self._flight_sprite.rect.top = sprite.rect.bottom
+                self._y = float(self._flight_sprite.rect.centery)
+            elif last_rect.bottom <= sprite.rect.top:
+                self._flight_sprite.rect.bottom = sprite.rect.top
+                self._y = float(self._flight_sprite.rect.centery)
+
+            if last_rect.left >= sprite.rect.right:
+                self._flight_sprite.rect.left = sprite.rect.right
+                self._x = float(self._flight_sprite.rect.centerx)
+            elif last_rect.right <= sprite.rect.left:
+                self._flight_sprite.rect.right = sprite.rect.left
+                self._x = float(self._flight_sprite.rect.centerx)
+
         if collision:
+            # TODO: use elastic collision equations
+            self._dx = -self._dx
+            self._dy = -self._dy
+
             self._hull -= 1
             self._update_hull_info()
             if self._hull <= 0:

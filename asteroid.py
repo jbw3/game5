@@ -84,6 +84,11 @@ class Asteroid(Sprite):
             self._x = float(self.rect.centerx)
 
     def collide(self, game: 'Game') -> None:
+        # TODO: use elastic collision equations
+        self._dx = -self._dx
+        self._dy = -self._dy
+
+    def damage(self, game: 'Game') -> None:
         game.flight_view_sprites.remove(self)
         game.flight_collision_sprites.remove(self)
 

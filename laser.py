@@ -39,5 +39,5 @@ class Laser(Sprite):
 
         collide_sprites = pygame.sprite.spritecollide(self, game.flight_collision_sprites, False)
         if len(collide_sprites) > 0:
-            collide_sprites[0].collide(game)
+            collide_sprites[0].damage(game)
             game.flight_view_sprites.remove(self)
