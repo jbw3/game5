@@ -199,6 +199,7 @@ class Ship:
 
     def _create_interior(self, interior_view_center: tuple[int, int]) -> None:
         min_floor_width = 100
+        door_width = 24
 
         floor_surface = pygame.surface.Surface((min_floor_width, min_floor_width))
         floor_surface.fill(Ship.FLOOR_COLOR)
@@ -238,7 +239,7 @@ class Ship:
         wall = self._create_wall(min_floor_width + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
         wall.rect.bottomleft = (floor1.rect.left - Ship.WALL_WIDTH, floor1.rect.top)
 
-        wall = self._create_wall(min_floor_width - 52, Ship.WALL_WIDTH)
+        wall = self._create_wall(min_floor_width - door_width*2, Ship.WALL_WIDTH)
         wall.rect.centerx = floor2.rect.centerx
         wall.rect.bottom = floor2.rect.bottom
 
@@ -248,10 +249,10 @@ class Ship:
         wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2)
         wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
 
-        wall = self._create_wall(38, Ship.WALL_WIDTH)
+        wall = self._create_wall((min_floor_width - door_width)//2, Ship.WALL_WIDTH)
         wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - Ship.WALL_WIDTH//2)
 
-        wall = self._create_wall(38, Ship.WALL_WIDTH)
+        wall = self._create_wall((min_floor_width - door_width)//2, Ship.WALL_WIDTH)
         wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - Ship.WALL_WIDTH//2)
 
         wall = self._create_wall(min_floor_width//2 - Ship.WALL_WIDTH, Ship.WALL_WIDTH)
@@ -265,6 +266,16 @@ class Ship:
 
         wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*3 + Ship.WALL_WIDTH*2)
         wall.rect.topleft = (floor4.rect.right, floor4.rect.top - Ship.WALL_WIDTH)
+
+        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2 - Ship.WALL_WIDTH//2 - door_width)
+        wall.rect.centerx = floor3.rect.right
+        wall.rect.top = floor3.rect.top
+
+        wall = self._create_wall(min_floor_width*2 - door_width*2, Ship.WALL_WIDTH)
+        wall.rect.center = floor3.rect.bottomright
+
+        wall = self._create_wall(min_floor_width*2 - door_width*2, Ship.WALL_WIDTH)
+        wall.rect.center = floor5.rect.bottomright
 
         wall = self._create_wall(min_floor_width*2, Ship.WALL_WIDTH)
         wall.rect.topleft = floor7.rect.bottomleft

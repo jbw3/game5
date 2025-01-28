@@ -232,11 +232,15 @@ class Game:
 
         # create people
         people: list[Person] = []
-        y = interior_view_center[1] - 40
-        for joystick in self._joysticks:
-            person = Person(self, (interior_view_center[0], y), joystick)
+        for i, joystick in enumerate(self._joysticks):
+            if i % 2 == 0:
+                x = interior_view_center[0] - 20
+            else:
+                x = interior_view_center[0] + 20
+            y = interior_view_center[1] - 130 + (i // 2 * 15)
+
+            person = Person(self, (x, y), joystick)
             people.append(person)
-            y += 20
 
     def end_mission(self) -> None:
         self._playing_mission = False
