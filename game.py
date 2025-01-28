@@ -44,6 +44,7 @@ class Game:
         self._interior_solid_sprites = pygame.sprite.Group()
         self._flight_collision_sprites = pygame.sprite.Group()
         self._info_overlay_sprites = pygame.sprite.Group()
+        self._people_sprites = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
@@ -75,6 +76,10 @@ class Game:
     @property
     def info_overlay_sprites(self) -> pygame.sprite.Group:
         return self._info_overlay_sprites
+
+    @property
+    def people_sprites(self) -> pygame.sprite.Group:
+        return self._people_sprites
 
     @property
     def interior_view_size(self) -> tuple[int, int]:
@@ -231,7 +236,6 @@ class Game:
         self._create_asteroids()
 
         # create people
-        people: list[Person] = []
         for i, joystick in enumerate(self._joysticks):
             if i % 2 == 0:
                 x = interior_view_center[0] - 20
@@ -240,7 +244,7 @@ class Game:
             y = interior_view_center[1] - 130 + (i // 2 * 15)
 
             person = Person(self, (x, y), joystick)
-            people.append(person)
+            self._people_sprites.add(person)
 
     def end_mission(self) -> None:
         self._playing_mission = False

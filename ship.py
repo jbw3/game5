@@ -3,6 +3,7 @@ import pygame
 import random
 from typing import TYPE_CHECKING, override
 
+from door import Door
 from laser import Laser
 from person import Person
 from sprite import Sprite
@@ -199,7 +200,8 @@ class Ship:
 
     def _create_interior(self, interior_view_center: tuple[int, int]) -> None:
         min_floor_width = 100
-        door_width = 24
+        door_gap = 24
+        door_thickness = Ship.WALL_WIDTH - 2
 
         floor_surface = pygame.surface.Surface((min_floor_width, min_floor_width))
         floor_surface.fill(Ship.FLOOR_COLOR)
@@ -239,7 +241,7 @@ class Ship:
         wall = self._create_wall(min_floor_width + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
         wall.rect.bottomleft = (floor1.rect.left - Ship.WALL_WIDTH, floor1.rect.top)
 
-        wall = self._create_wall(min_floor_width - door_width*2, Ship.WALL_WIDTH)
+        wall = self._create_wall(min_floor_width - door_gap*2, Ship.WALL_WIDTH)
         wall.rect.centerx = floor2.rect.centerx
         wall.rect.bottom = floor2.rect.bottom
 
@@ -249,10 +251,10 @@ class Ship:
         wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2)
         wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
 
-        wall = self._create_wall((min_floor_width - door_width)//2, Ship.WALL_WIDTH)
+        wall = self._create_wall((min_floor_width - door_gap)//2, Ship.WALL_WIDTH)
         wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - Ship.WALL_WIDTH//2)
 
-        wall = self._create_wall((min_floor_width - door_width)//2, Ship.WALL_WIDTH)
+        wall = self._create_wall((min_floor_width - door_gap)//2, Ship.WALL_WIDTH)
         wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - Ship.WALL_WIDTH//2)
 
         wall = self._create_wall(min_floor_width//2 - Ship.WALL_WIDTH, Ship.WALL_WIDTH)
@@ -267,14 +269,14 @@ class Ship:
         wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*3 + Ship.WALL_WIDTH*2)
         wall.rect.topleft = (floor4.rect.right, floor4.rect.top - Ship.WALL_WIDTH)
 
-        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2 - Ship.WALL_WIDTH//2 - door_width)
+        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2 - Ship.WALL_WIDTH//2 - door_gap)
         wall.rect.centerx = floor3.rect.right
         wall.rect.top = floor3.rect.top
 
-        wall = self._create_wall(min_floor_width*2 - door_width*2, Ship.WALL_WIDTH)
+        wall = self._create_wall(min_floor_width*2 - door_gap*2, Ship.WALL_WIDTH)
         wall.rect.center = floor3.rect.bottomright
 
-        wall = self._create_wall(min_floor_width*2 - door_width*2, Ship.WALL_WIDTH)
+        wall = self._create_wall(min_floor_width*2 - door_gap*2, Ship.WALL_WIDTH)
         wall.rect.center = floor5.rect.bottomright
 
         wall = self._create_wall(min_floor_width*2, Ship.WALL_WIDTH)
@@ -286,6 +288,10 @@ class Ship:
         for wall in self._walls:
             self.game.interior_view_sprites.add(wall)
             self.game.interior_solid_sprites.add(wall)
+
+        door1 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
+        door1.rect.centerx = floor1.rect.centerx
+        door1.rect.centery = floor1.rect.bottom
 
         # pilot console
         pilot_console = PilotConsole(self.game)
