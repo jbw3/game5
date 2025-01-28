@@ -310,6 +310,9 @@ class Ship:
         door7 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
         door7.rect.midright = (floor6.rect.right, floor6.rect.bottom)
 
+        door8 = Door(self.game, Door.Orientation.Vertical, door_gap, door_thickness)
+        door8.rect.midbottom = (floor5.rect.right, floor5.rect.bottom - Ship.WALL_WIDTH//2)
+
         # pilot console
         pilot_console = PilotConsole(self.game)
         pilot_console.rect.centerx = floor1.rect.centerx

@@ -41,7 +41,10 @@ class Door(Sprite):
     @override
     def update(self, game: 'Game') -> None:
         if pygame.time.get_ticks() >= self._last_update + 10:
-            proximity_rect = self.rect.inflate(10, 10)
+            if self._orientation == Door.Orientation.Horizontal:
+                proximity_rect = self.rect.inflate(8, 10)
+            else:
+                proximity_rect = self.rect.inflate(10, 8)
 
             opening = False
             for person in game.people_sprites:
@@ -60,10 +63,14 @@ class Door(Sprite):
                     needs_update = True
 
             if needs_update:
+                if self._orientation == Door.Orientation.Horizontal:
+                    rect1 = pygame.rect.Rect(0, 0, self._current_len, self._thickness)
+                    rect2 = pygame.rect.Rect(self._gap_len - self._current_len, 0, self._current_len, self._thickness)
+                else:
+                    rect1 = pygame.rect.Rect(0, 0, self._thickness, self._current_len)
+                    rect2 = pygame.rect.Rect(0, self._gap_len - self._current_len, self._thickness, self._current_len)
                 self.image.fill(Door.COLORKEY)
-                rect1 = pygame.rect.Rect(0, 0, self._current_len, self._thickness)
                 pygame.draw.rect(self.image, Door.COLOR, rect1)
-                rect2 = pygame.rect.Rect(self._gap_len - self._current_len, 0, self._current_len, self._thickness)
                 pygame.draw.rect(self.image, Door.COLOR, rect2)
 
             self._last_update = pygame.time.get_ticks()
