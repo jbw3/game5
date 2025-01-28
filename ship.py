@@ -144,7 +144,6 @@ class Ship:
     AIM_ANGLE_RATE = 120.0 # degrees
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
-    FLOOR_WIDTH = 100
     WALL_WIDTH = 10
 
     def __init__(self, game: 'Game', interior_view_center: tuple[int, int]):
@@ -170,64 +169,9 @@ class Ship:
 
         self._floor: list[pygame.sprite.Sprite] = []
         self._walls: list[pygame.sprite.Sprite] = []
-
-        surface = pygame.surface.Surface((Ship.FLOOR_WIDTH, Ship.FLOOR_WIDTH))
-        surface.fill(Ship.FLOOR_COLOR)
-        floor1 = Sprite(surface)
-        floor1.rect.center = (interior_view_center[0], interior_view_center[1] - 50)
-        self._floor.append(floor1)
-
-        surface = pygame.surface.Surface((Ship.FLOOR_WIDTH, Ship.FLOOR_WIDTH))
-        surface.fill(Ship.FLOOR_COLOR)
-        floor2 = Sprite(surface)
-        floor2.rect.topleft = (floor1.rect.left, floor1.rect.bottom)
-        self._floor.append(floor2)
-
-        # top wall
-        wall = self._create_wall(Ship.FLOOR_WIDTH + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
-        wall.rect.bottomleft = (floor1.rect.left - Ship.WALL_WIDTH, floor1.rect.top)
-
-        # bottom wall
-        wall = self._create_wall(Ship.FLOOR_WIDTH + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
-        wall.rect.topleft = (floor2.rect.left - Ship.WALL_WIDTH, floor2.rect.bottom)
-
-        # left wall
-        wall = self._create_wall(Ship.WALL_WIDTH, Ship.FLOOR_WIDTH*2)
-        wall.rect.topright = (floor1.rect.left, floor1.rect.top)
-
-        # right wall
-        wall = self._create_wall(Ship.WALL_WIDTH, Ship.FLOOR_WIDTH*2)
-        wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
-
-        wall = self._create_wall(38, Ship.WALL_WIDTH)
-        wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - Ship.WALL_WIDTH//2)
-
-        wall = self._create_wall(38, Ship.WALL_WIDTH)
-        wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - Ship.WALL_WIDTH//2)
-
-        for floor in self._floor:
-            game.interior_view_sprites.add(floor)
-
-        for wall in self._walls:
-            game.interior_view_sprites.add(wall)
-            game.interior_solid_sprites.add(wall)
-
         self._consoles: list[Console] = []
 
-        # pilot console
-        pilot_console = PilotConsole(game)
-        pilot_console.rect.centerx = floor1.rect.centerx
-        pilot_console.rect.top = floor1.rect.top
-        self._consoles.append(pilot_console)
-
-        # weapon consoles
-        top = floor1.rect.top + 25
-        for i in range(2):
-            weapon_console = WeaponConsole(game, i)
-            weapon_console.rect.left = floor1.rect.left
-            weapon_console.rect.top = top
-            self._consoles.append(weapon_console)
-            top += 35
+        self._create_interior(interior_view_center)
 
         # hull integrity info
         self._status_font = pygame.font.SysFont('Arial', 40)
@@ -237,7 +181,7 @@ class Ship:
 
         # flight view image
         ship_image_size = background_image.get_size()
-        new_size = (ship_image_size[0] // 10, ship_image_size[1] // 10)
+        new_size = (ship_image_size[0] // 15, ship_image_size[1] // 15)
         flight_view_image = pygame.transform.scale(background_image, new_size)
         self._flight_sprite = Sprite(flight_view_image)
         self._flight_sprite.rect.center = flight_view_center
@@ -252,6 +196,100 @@ class Ship:
         for i in range(2):
             aim_sprite = AimSprite(colors[i], self._flight_sprite.rect.center)
             self._aiming.append(aim_sprite)
+
+    def _create_interior(self, interior_view_center: tuple[int, int]) -> None:
+        min_floor_width = 100
+
+        floor_surface = pygame.surface.Surface((min_floor_width, min_floor_width))
+        floor_surface.fill(Ship.FLOOR_COLOR)
+
+        # bridge
+        floor1 = Sprite(floor_surface)
+        floor1.rect.center = (interior_view_center[0], interior_view_center[1] - 200)
+        self._floor.append(floor1)
+
+        floor2 = Sprite(floor_surface)
+        floor2.rect.topleft = (floor1.rect.left, floor1.rect.bottom)
+        self._floor.append(floor2)
+
+        floor3 = Sprite(floor_surface)
+        floor3.rect.topright = (floor2.rect.centerx, floor2.rect.bottom)
+        self._floor.append(floor3)
+
+        floor4 = Sprite(floor_surface)
+        floor4.rect.topleft = (floor2.rect.centerx, floor2.rect.bottom)
+        self._floor.append(floor4)
+
+        floor5 = Sprite(floor_surface)
+        floor5.rect.topleft = (floor3.rect.left, floor3.rect.bottom)
+        self._floor.append(floor5)
+
+        floor6 = Sprite(floor_surface)
+        floor6.rect.topleft = (floor4.rect.left, floor4.rect.bottom)
+        self._floor.append(floor6)
+
+        floor_surface2 = pygame.surface.Surface((min_floor_width*2, min_floor_width))
+        floor_surface2.fill(Ship.FLOOR_COLOR)
+
+        floor7 = Sprite(floor_surface2)
+        floor7.rect.topleft = (floor5.rect.left, floor5.rect.bottom)
+        self._floor.append(floor7)
+
+        wall = self._create_wall(min_floor_width + Ship.WALL_WIDTH*2, Ship.WALL_WIDTH)
+        wall.rect.bottomleft = (floor1.rect.left - Ship.WALL_WIDTH, floor1.rect.top)
+
+        wall = self._create_wall(min_floor_width - 52, Ship.WALL_WIDTH)
+        wall.rect.centerx = floor2.rect.centerx
+        wall.rect.bottom = floor2.rect.bottom
+
+        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2)
+        wall.rect.topright = (floor1.rect.left, floor1.rect.top)
+
+        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*2)
+        wall.rect.topleft = (floor1.rect.right, floor1.rect.top)
+
+        wall = self._create_wall(38, Ship.WALL_WIDTH)
+        wall.rect.topleft = (floor1.rect.left, floor1.rect.bottom - Ship.WALL_WIDTH//2)
+
+        wall = self._create_wall(38, Ship.WALL_WIDTH)
+        wall.rect.topright = (floor1.rect.right, floor1.rect.bottom - Ship.WALL_WIDTH//2)
+
+        wall = self._create_wall(min_floor_width//2 - Ship.WALL_WIDTH, Ship.WALL_WIDTH)
+        wall.rect.bottomleft = floor3.rect.topleft
+
+        wall = self._create_wall(min_floor_width//2 - Ship.WALL_WIDTH, Ship.WALL_WIDTH)
+        wall.rect.bottomright = floor4.rect.topright
+
+        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*3 + Ship.WALL_WIDTH*2)
+        wall.rect.topright = (floor3.rect.left, floor3.rect.top - Ship.WALL_WIDTH)
+
+        wall = self._create_wall(Ship.WALL_WIDTH, min_floor_width*3 + Ship.WALL_WIDTH*2)
+        wall.rect.topleft = (floor4.rect.right, floor4.rect.top - Ship.WALL_WIDTH)
+
+        wall = self._create_wall(min_floor_width*2, Ship.WALL_WIDTH)
+        wall.rect.topleft = floor7.rect.bottomleft
+
+        for floor in self._floor:
+            self.game.interior_view_sprites.add(floor)
+
+        for wall in self._walls:
+            self.game.interior_view_sprites.add(wall)
+            self.game.interior_solid_sprites.add(wall)
+
+        # pilot console
+        pilot_console = PilotConsole(self.game)
+        pilot_console.rect.centerx = floor1.rect.centerx
+        pilot_console.rect.top = floor1.rect.top
+        self._consoles.append(pilot_console)
+
+        # weapon consoles
+        top = floor1.rect.top + 25
+        for i in range(2):
+            weapon_console = WeaponConsole(self.game, i)
+            weapon_console.rect.left = floor1.rect.left
+            weapon_console.rect.top = top
+            self._consoles.append(weapon_console)
+            top += 35
 
     def _create_wall(self, width: int, height: int) -> Sprite:
         surface = pygame.surface.Surface((width, height))
