@@ -22,7 +22,8 @@ class Game:
 
         self._fps_clock = pygame.time.Clock()
         self._frame_time = 0.0
-        self._work_time_ms = 0
+
+        self._work_times_ms = [0] * 60
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
@@ -103,15 +104,29 @@ class Game:
     def _display_debug(self) -> None:
         y = 0
 
+        # FPS
+
         fps = self._fps_clock.get_fps()
         text_surface = self._debug_font.render(f'FPS: {fps:.1f}', False, DEBUG_TEXT_COLOR)
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
-        work_time_percentage = self._work_time_ms / Game.MAX_FRAME_TIME_MS * 100
-        text_surface = self._debug_font.render(f'Frame time: {self._work_time_ms}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({work_time_percentage:.0f}%)', False, DEBUG_TEXT_COLOR)
+        # Frame times
+
+        num_frames = len(self._work_times_ms)
+        text_surface = self._debug_font.render(f'Frame times for past {num_frames} frames:', False, DEBUG_TEXT_COLOR)
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
+
+        work_time_avg = sum(self._work_times_ms) / num_frames
+        work_time_max = max(self._work_times_ms)
+        work_time_min = min(self._work_times_ms)
+        work_time_avg_percentage = work_time_avg / Game.MAX_FRAME_TIME_MS * 100
+        text_surface = self._debug_font.render(f' Avg: {work_time_avg:.1f}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({work_time_avg_percentage:.0f}%), Max: {work_time_max} ms, Min: {work_time_min} ms', False, DEBUG_TEXT_COLOR)
+        self._display_surf.blit(text_surface, (0, y))
+        y += text_surface.get_rect().bottom
+
+        # Joystick info
 
         joystick_count = pygame.joystick.get_count()
         text_surface = self._debug_font.render(f'Joystick info ({joystick_count}):', False, DEBUG_TEXT_COLOR)
@@ -310,7 +325,10 @@ class Game:
 
             pygame.display.update()
 
-            self._work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
+            work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
+            self._work_times_ms.append(work_time_ms)
+            self._work_times_ms.pop(0)
+
             frame_time_ms = self._fps_clock.tick(Game.MAX_FPS)
             self._frame_time = frame_time_ms / 1000
 
