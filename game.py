@@ -25,9 +25,9 @@ class Game:
         self._fps_clock = pygame.time.Clock()
         self._frame_time = 0.0
 
-        self._work_times_ms = [0] * 60
-        self._update_times_ms = [0] * 60
-        self._draw_times_ms = [0] * 60
+        self._work_times_ms = [0] * int(Game.MAX_FPS)
+        self._update_times_ms = [0] * int(Game.MAX_FPS)
+        self._draw_times_ms = [0] * int(Game.MAX_FPS)
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
