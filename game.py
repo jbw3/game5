@@ -147,11 +147,14 @@ class Game:
             name = joystick.get_name()
             text_strings.append(f' {i}: {name}')
 
-            axes_str = ', '.join(f'{i}: {joystick.get_axis(i):.1f}' for i in range(joystick.get_numaxes()))
+            axes_str = ', '.join(f'{j}: {joystick.get_axis(j):.1f}' for j in range(joystick.get_numaxes()))
             text_strings.append(f'  axes: {axes_str}')
 
-            buttons_str = ', '.join(f'{i}: {joystick.get_button(i)}' for i in range(joystick.get_numbuttons()))
+            buttons_str = ', '.join(f'{j}: {joystick.get_button(j)}' for j in range(joystick.get_numbuttons()))
             text_strings.append(f'  buttons: {buttons_str}')
+
+            hats_str = ', '.join(f'{j}: {joystick.get_hat(j)}' for j in range(joystick.get_numhats()))
+            text_strings.append(f'  hats: {hats_str}')
 
         y = 0
         for s in text_strings:
