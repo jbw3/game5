@@ -1,9 +1,9 @@
-import os
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
 
 from asteroid import Asteroid
+from image_loader import ImageLoader
 from person import Person
 from ship import Ship
 
@@ -19,6 +19,8 @@ class Game:
         pygame.init()
         pygame.font.init()
         pygame.joystick.init()
+
+        self._image_loader = ImageLoader()
 
         self._fps_clock = pygame.time.Clock()
         self._frame_time = 0.0
@@ -55,6 +57,10 @@ class Game:
         self._ship: Ship|None = None
         self._asteroid_count = 0
         self._asteroid_create_count = 0
+
+    @property
+    def image_loader(self) -> ImageLoader:
+        return self._image_loader
 
     @property
     def frame_time(self) -> float:
@@ -197,7 +203,7 @@ class Game:
                 surface.blit(star_surface, (x, y))
 
         galaxy_images = [
-            pygame.image.load(os.path.join('images', f'galaxy{i+1}.png'))
+            self.image_loader.load(f'galaxy{i+1}.png')
             for i in range(2)
         ]
         num_galaxies = random.choice([2, 3])
@@ -211,7 +217,7 @@ class Game:
             surface.blit(galaxy_surface_rotated, (x, y))
 
         nebula_part_images = [
-            pygame.image.load(os.path.join('images', f'nebula_part{i+1}.png'))
+            self.image_loader.load(f'nebula_part{i+1}.png')
             for i in range(5)
         ]
         num_nebulas = 2

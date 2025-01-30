@@ -1,6 +1,5 @@
 from enum import Enum, unique
 import math
-import os
 import pygame
 from typing import TYPE_CHECKING, override
 
@@ -15,11 +14,11 @@ class Person(Sprite):
         Moving = 0
         Console = 1
 
-    IMAGE = pygame.image.load(os.path.join('images', 'person.png'))
+    IMAGE_NAME = 'person.png'
     MAX_SPEED = 60.0
 
     def __init__(self, game: 'Game', center: tuple[int, int], joystick: pygame.joystick.JoystickType):
-        super().__init__(Person.IMAGE)
+        super().__init__(game.image_loader.load(Person.IMAGE_NAME))
         self.rect.center = center
 
         self._x = float(center[0])

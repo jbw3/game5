@@ -1,5 +1,4 @@
 import math
-import os
 import pygame
 from typing import TYPE_CHECKING, override
 
@@ -9,12 +8,12 @@ if TYPE_CHECKING:
     from game import Game
 
 class Laser(Sprite):
-    RED_IMAGE = pygame.image.load(os.path.join('images', 'laser_red.png'))
+    RED_IMAGE_NAME = 'laser_red.png'
 
     SPEED = 1000
 
     def __init__(self, game: 'Game', center: tuple[int, int], angle: float):
-        super().__init__(pygame.transform.rotate(Laser.RED_IMAGE, angle))
+        super().__init__(pygame.transform.rotate(game.image_loader.load(Laser.RED_IMAGE_NAME), angle))
         self.rect.center = center
 
         game.flight_view_sprites.add(self)

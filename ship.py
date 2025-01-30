@@ -1,4 +1,3 @@
-import os
 import pygame
 import random
 from typing import TYPE_CHECKING, override
@@ -12,8 +11,8 @@ if TYPE_CHECKING:
     from game import Game
 
 class Console(Sprite):
-    PILOT_CONSOLE_IMAGE = pygame.image.load(os.path.join('images', 'pilot_console.png'))
-    WEAPON_CONSOLE_IMAGE = pygame.image.load(os.path.join('images', 'weapon_console.png'))
+    PILOT_CONSOLE_IMAGE_NAME = 'pilot_console.png'
+    WEAPON_CONSOLE_IMAGE_NAME = 'weapon_console.png'
 
     def __init__(self, game: 'Game', image: pygame.surface.Surface):
         super().__init__(image)
@@ -41,7 +40,7 @@ class Console(Sprite):
 
 class PilotConsole(Console):
     def __init__(self, game: 'Game'):
-        super().__init__(game, Console.PILOT_CONSOLE_IMAGE)
+        super().__init__(game, game.image_loader.load(Console.PILOT_CONSOLE_IMAGE_NAME))
 
     @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
@@ -64,7 +63,7 @@ class PilotConsole(Console):
 
 class WeaponConsole(Console):
     def __init__(self, game: 'Game', weapon_index: int):
-        super().__init__(game, Console.WEAPON_CONSOLE_IMAGE)
+        super().__init__(game, game.image_loader.load(Console.WEAPON_CONSOLE_IMAGE_NAME))
         self._weapon_index = weapon_index
 
     @override
@@ -163,7 +162,7 @@ class Ship:
         self._next_available_laser_fire = [0, 0]
         self._hull = 3
 
-        background_image = pygame.image.load(os.path.join('images', 'ship1.png'))
+        background_image = game.image_loader.load('ship1.png')
         background_sprite = Sprite(background_image)
         background_sprite.rect.center = interior_view_center
         game.interior_view_sprites.add(background_sprite)

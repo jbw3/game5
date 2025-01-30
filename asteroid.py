@@ -1,6 +1,4 @@
 from enum import Enum, unique
-import os
-import pygame
 import random
 from typing import TYPE_CHECKING, override
 
@@ -16,30 +14,30 @@ class Asteroid(Sprite):
         Medium = 1
         Big = 2
 
-    SMALL_IMAGES = [
-        pygame.image.load(os.path.join('images', f'asteroid_small{i+1}.png'))
-        for i in range(1)
-    ]
-    MEDIUM_IMAGES = [
-        pygame.image.load(os.path.join('images', f'asteroid_medium{i+1}.png'))
-        for i in range(2)
-    ]
-    BIG_IMAGES = [
-        pygame.image.load(os.path.join('images', f'asteroid_big{i+1}.png'))
-        for i in range(2)
-    ]
     MAX_SPEED = 120
 
     def __init__(self, game: 'Game', size: 'Asteroid.Size', center: tuple[int, int]):
+        small_images = [
+            game.image_loader.load(f'asteroid_small{i+1}.png')
+            for i in range(1)
+        ]
+        medium_images = [
+            game.image_loader.load(f'asteroid_medium{i+1}.png')
+            for i in range(2)
+        ]
+        big_images = [
+            game.image_loader.load(f'asteroid_big{i+1}.png')
+            for i in range(2)
+        ]
 
         self._size = size
         match size:
             case Asteroid.Size.Small:
-                images = Asteroid.SMALL_IMAGES
+                images = small_images
             case Asteroid.Size.Medium:
-                images = Asteroid.MEDIUM_IMAGES
+                images = medium_images
             case Asteroid.Size.Big:
-                images = Asteroid.BIG_IMAGES
+                images = big_images
             case _:
                 assert False, f'Unknown asteroid size: {size}'
 
