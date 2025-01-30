@@ -122,55 +122,40 @@ class Game:
         return s
 
     def _display_debug(self) -> None:
-        y = 0
+        text_strings: list[str] = []
 
         # FPS
 
         fps = self._fps_clock.get_fps()
-        text_surface = self._debug_font.render(f'FPS: {fps:.1f}', False, DEBUG_TEXT_COLOR)
-        self._display_surf.blit(text_surface, (0, y))
-        y += text_surface.get_rect().bottom
+        text_strings.append(f'FPS: {fps:.1f}')
 
         # Frame times
 
         num_frames = len(self._work_times_ms)
-        text_surface = self._debug_font.render(f'Frame times for past {num_frames} frames:', False, DEBUG_TEXT_COLOR)
-        self._display_surf.blit(text_surface, (0, y))
-        y += text_surface.get_rect().bottom
-
-        text_surface = self._debug_font.render(self._build_timing_string('Total', self._work_times_ms), False, DEBUG_TEXT_COLOR)
-        self._display_surf.blit(text_surface, (0, y))
-        y += text_surface.get_rect().bottom
-
-        text_surface = self._debug_font.render(self._build_timing_string('Update', self._update_times_ms), False, DEBUG_TEXT_COLOR)
-        self._display_surf.blit(text_surface, (0, y))
-        y += text_surface.get_rect().bottom
-
-        text_surface = self._debug_font.render(self._build_timing_string('Draw', self._draw_times_ms), False, DEBUG_TEXT_COLOR)
-        self._display_surf.blit(text_surface, (0, y))
-        y += text_surface.get_rect().bottom
+        text_strings.append(f'Frame times for past {num_frames} frames:')
+        text_strings.append(self._build_timing_string('Total', self._work_times_ms))
+        text_strings.append(self._build_timing_string('Update', self._update_times_ms))
+        text_strings.append(self._build_timing_string('Draw', self._draw_times_ms))
 
         # Joystick info
 
         joystick_count = pygame.joystick.get_count()
-        text_surface = self._debug_font.render(f'Joystick info ({joystick_count}):', False, DEBUG_TEXT_COLOR)
-        self._display_surf.blit(text_surface, (0, y))
-        y += text_surface.get_rect().bottom
+        text_strings.append(f'Joystick info ({joystick_count}):')
 
         for joystick in self._joysticks:
             i = joystick.get_instance_id()
             name = joystick.get_name()
-            text_surface = self._debug_font.render(f' {i}: {name}', False, DEBUG_TEXT_COLOR)
-            self._display_surf.blit(text_surface, (0, y))
-            y += text_surface.get_rect().bottom
+            text_strings.append(f' {i}: {name}')
 
             axes_str = ', '.join(f'{i}: {joystick.get_axis(i):.1f}' for i in range(joystick.get_numaxes()))
-            text_surface = self._debug_font.render(f'  axes: {axes_str}', False, DEBUG_TEXT_COLOR)
-            self._display_surf.blit(text_surface, (0, y))
-            y += text_surface.get_rect().bottom
+            text_strings.append(f'  axes: {axes_str}')
 
             buttons_str = ', '.join(f'{i}: {joystick.get_button(i)}' for i in range(joystick.get_numbuttons()))
-            text_surface = self._debug_font.render(f'  buttons: {buttons_str}', False, DEBUG_TEXT_COLOR)
+            text_strings.append(f'  buttons: {buttons_str}')
+
+        y = 0
+        for s in text_strings:
+            text_surface = self._debug_font.render(s, False, DEBUG_TEXT_COLOR)
             self._display_surf.blit(text_surface, (0, y))
             y += text_surface.get_rect().bottom
 
