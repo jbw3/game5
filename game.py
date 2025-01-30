@@ -28,6 +28,8 @@ class Game:
         self._work_times_ms = [0] * int(Game.MAX_FPS)
         self._update_times_ms = [0] * int(Game.MAX_FPS)
         self._draw_times_ms = [0] * int(Game.MAX_FPS)
+        self._blit_times_ms = [0] * int(Game.MAX_FPS)
+        self._display_update_times_ms = [0] * int(Game.MAX_FPS)
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
@@ -110,15 +112,16 @@ class Game:
         if self._asteroid_count == 0:
             self._create_asteroids()
 
-    def _build_timing_string(self, title: str, times: list[int]) -> str:
+    def _build_timing_string(self, title: str, indent: int, times: list[int]) -> str:
         num_times = len(times)
         times_avg = sum(times) / num_times
         times_max = max(times)
         times_min = min(times)
         times_avg_percentage = times_avg / Game.MAX_FRAME_TIME_MS * 100
         title += ':'
-        padded_title = f'{title:<7}'
-        s = f' {padded_title} avg: {times_avg:4.1f}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({times_avg_percentage:2.0f}%), min: {times_min:2} ms, max: {times_max:2} ms'
+        padded_title = f'{title:<8}'
+        indent_str = ' ' * indent
+        s = f'{indent_str}{padded_title} avg: {times_avg:4.1f}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({times_avg_percentage:2.0f}%), min: {times_min:2} ms, max: {times_max:2} ms'
         return s
 
     def _display_debug(self) -> None:
@@ -133,9 +136,11 @@ class Game:
 
         num_frames = len(self._work_times_ms)
         text_strings.append(f'Frame times for past {num_frames} frames:')
-        text_strings.append(self._build_timing_string('Total', self._work_times_ms))
-        text_strings.append(self._build_timing_string('Update', self._update_times_ms))
-        text_strings.append(self._build_timing_string('Draw', self._draw_times_ms))
+        text_strings.append(self._build_timing_string('Total', 1, self._work_times_ms))
+        text_strings.append(self._build_timing_string('Update', 1, self._update_times_ms))
+        text_strings.append(self._build_timing_string('Draw', 1, self._draw_times_ms))
+        text_strings.append(self._build_timing_string('Blit', 2, self._blit_times_ms))
+        text_strings.append(self._build_timing_string('Display', 2, self._display_update_times_ms))
 
         # Joystick info
 
@@ -328,6 +333,7 @@ class Game:
             # Draw sprites
 
             draw_time_start_ms = pygame.time.get_ticks()
+            blit_time_start_ms = draw_time_start_ms
 
             self._interior_view_surface.blit(self._space_background, (0, 0))
             self._flight_view_surface.blit(self._space_background, (0, 0))
@@ -343,15 +349,26 @@ class Game:
             if self._debug:
                 self._display_debug()
 
+            blit_time_ms = pygame.time.get_ticks() - blit_time_start_ms
+
+            display_update_start_ms = pygame.time.get_ticks()
             pygame.display.update()
 
-            draw_time_ms = pygame.time.get_ticks() - draw_time_start_ms
+            now = pygame.time.get_ticks()
+            display_update_time_ms = now - display_update_start_ms
+            draw_time_ms = now - draw_time_start_ms
 
             self._update_times_ms.append(update_time_ms)
             self._update_times_ms.pop(0)
 
             self._draw_times_ms.append(draw_time_ms)
             self._draw_times_ms.pop(0)
+
+            self._blit_times_ms.append(blit_time_ms)
+            self._blit_times_ms.pop(0)
+
+            self._display_update_times_ms.append(display_update_time_ms)
+            self._display_update_times_ms.pop(0)
 
             work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
             self._work_times_ms.append(work_time_ms)
