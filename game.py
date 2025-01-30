@@ -24,6 +24,8 @@ class Game:
         self._frame_time = 0.0
 
         self._work_times_ms = [0] * 60
+        self._update_times_ms = [0] * 60
+        self._draw_times_ms = [0] * 60
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         self._display_surf.fill((0, 0, 0))
@@ -101,6 +103,17 @@ class Game:
         if self._asteroid_count == 0:
             self._create_asteroids()
 
+    def _build_timing_string(self, title: str, times: list[int]) -> str:
+        num_times = len(times)
+        times_avg = sum(times) / num_times
+        times_max = max(times)
+        times_min = min(times)
+        times_avg_percentage = times_avg / Game.MAX_FRAME_TIME_MS * 100
+        title += ':'
+        padded_title = f'{title:<7}'
+        s = f' {padded_title} avg: {times_avg:4.1f}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({times_avg_percentage:2.0f}%), min: {times_min:2} ms, max: {times_max:2} ms'
+        return s
+
     def _display_debug(self) -> None:
         y = 0
 
@@ -118,11 +131,15 @@ class Game:
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
-        work_time_avg = sum(self._work_times_ms) / num_frames
-        work_time_max = max(self._work_times_ms)
-        work_time_min = min(self._work_times_ms)
-        work_time_avg_percentage = work_time_avg / Game.MAX_FRAME_TIME_MS * 100
-        text_surface = self._debug_font.render(f' Avg: {work_time_avg:.1f}/{Game.MAX_FRAME_TIME_MS:.1f} ms ({work_time_avg_percentage:.0f}%), Max: {work_time_max} ms, Min: {work_time_min} ms', False, DEBUG_TEXT_COLOR)
+        text_surface = self._debug_font.render(self._build_timing_string('Total', self._work_times_ms), False, DEBUG_TEXT_COLOR)
+        self._display_surf.blit(text_surface, (0, y))
+        y += text_surface.get_rect().bottom
+
+        text_surface = self._debug_font.render(self._build_timing_string('Update', self._update_times_ms), False, DEBUG_TEXT_COLOR)
+        self._display_surf.blit(text_surface, (0, y))
+        y += text_surface.get_rect().bottom
+
+        text_surface = self._debug_font.render(self._build_timing_string('Draw', self._draw_times_ms), False, DEBUG_TEXT_COLOR)
         self._display_surf.blit(text_surface, (0, y))
         y += text_surface.get_rect().bottom
 
@@ -300,12 +317,22 @@ class Game:
             if quit_game:
                 break
 
+            # Update sprites
+
+            update_time_start_ms = pygame.time.get_ticks()
+
             if self._playing_mission and self._ship is not None:
                 self._ship.update(self)
             for sprite in self.interior_view_sprites:
                 sprite.update(self)
             for sprite in self.flight_view_sprites:
                 sprite.update(self)
+
+            update_time_ms = pygame.time.get_ticks() - update_time_start_ms
+
+            # Draw sprites
+
+            draw_time_start_ms = pygame.time.get_ticks()
 
             self._interior_view_surface.blit(self._space_background, (0, 0))
             self._flight_view_surface.blit(self._space_background, (0, 0))
@@ -324,6 +351,14 @@ class Game:
                 self._display_debug()
 
             pygame.display.update()
+
+            draw_time_ms = pygame.time.get_ticks() - draw_time_start_ms
+
+            self._update_times_ms.append(update_time_ms)
+            self._update_times_ms.pop(0)
+
+            self._draw_times_ms.append(draw_time_ms)
+            self._draw_times_ms.pop(0)
 
             work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
             self._work_times_ms.append(work_time_ms)
