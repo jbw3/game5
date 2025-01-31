@@ -52,8 +52,10 @@ class Game:
         self._divider = pygame.surface.Surface((8, display_height))
         self._divider.fill((130, 130, 130))
 
-        self._debug = False
-        self._can_change_debug = True
+        self._pressed_keys: set[int] = set()
+
+        self._timing_debug = False
+        self._joystick_debug = False
         self._debug_font = pygame.font.SysFont('Courier', 20)
         self._debug_rect = pygame.rect.Rect(0, 0, 0, 0)
 
@@ -137,39 +139,38 @@ class Game:
     def _display_debug(self) -> None:
         text_strings: list[str] = []
 
-        # FPS
+        if self._timing_debug:
+            # FPS
+            fps = self._fps_clock.get_fps()
+            text_strings.append(f'FPS: {fps:.1f}')
 
-        fps = self._fps_clock.get_fps()
-        text_strings.append(f'FPS: {fps:.1f}')
+            # Frame times
+            num_frames = len(self._work_times_ms)
+            text_strings.append(f'Frame times for past {num_frames} frames:')
+            text_strings.append(self._build_timing_string('Total', 1, self._work_times_ms))
+            text_strings.append(self._build_timing_string('Update', 1, self._update_times_ms))
+            text_strings.append(self._build_timing_string('Draw', 1, self._draw_times_ms))
+            text_strings.append(self._build_timing_string('Blit', 2, self._blit_times_ms))
+            text_strings.append(self._build_timing_string('Display', 2, self._display_update_times_ms))
 
-        # Frame times
+        if self._joystick_debug:
+            # Joystick info
+            joystick_count = pygame.joystick.get_count()
+            text_strings.append(f'Joystick info ({joystick_count}):')
 
-        num_frames = len(self._work_times_ms)
-        text_strings.append(f'Frame times for past {num_frames} frames:')
-        text_strings.append(self._build_timing_string('Total', 1, self._work_times_ms))
-        text_strings.append(self._build_timing_string('Update', 1, self._update_times_ms))
-        text_strings.append(self._build_timing_string('Draw', 1, self._draw_times_ms))
-        text_strings.append(self._build_timing_string('Blit', 2, self._blit_times_ms))
-        text_strings.append(self._build_timing_string('Display', 2, self._display_update_times_ms))
+            for joystick in self._joysticks:
+                i = joystick.get_instance_id()
+                name = joystick.get_name()
+                text_strings.append(f' {i}: {name}')
 
-        # Joystick info
+                axes_str = ', '.join(f'{j}: {joystick.get_axis(j):.1f}' for j in range(joystick.get_numaxes()))
+                text_strings.append(f'  axes: {axes_str}')
 
-        joystick_count = pygame.joystick.get_count()
-        text_strings.append(f'Joystick info ({joystick_count}):')
+                buttons_str = ', '.join(f'{j}: {joystick.get_button(j)}' for j in range(joystick.get_numbuttons()))
+                text_strings.append(f'  buttons: {buttons_str}')
 
-        for joystick in self._joysticks:
-            i = joystick.get_instance_id()
-            name = joystick.get_name()
-            text_strings.append(f' {i}: {name}')
-
-            axes_str = ', '.join(f'{j}: {joystick.get_axis(j):.1f}' for j in range(joystick.get_numaxes()))
-            text_strings.append(f'  axes: {axes_str}')
-
-            buttons_str = ', '.join(f'{j}: {joystick.get_button(j)}' for j in range(joystick.get_numbuttons()))
-            text_strings.append(f'  buttons: {buttons_str}')
-
-            hats_str = ', '.join(f'{j}: {joystick.get_hat(j)}' for j in range(joystick.get_numhats()))
-            text_strings.append(f'  hats: {hats_str}')
+                hats_str = ', '.join(f'{j}: {joystick.get_hat(j)}' for j in range(joystick.get_numhats()))
+                text_strings.append(f'  hats: {hats_str}')
 
         y = 0
         for s in text_strings:
@@ -312,17 +313,17 @@ class Game:
                     pygame.quit()
                     quit_game = True
                 elif event.type == KEYDOWN:
-                    if event.key == pygame.K_F1:
-                        if self._can_change_debug:
-                            self._debug = not self._debug
-                            self._can_change_debug = False
+                    if event.key == pygame.K_F1 and pygame.K_F1 not in self._pressed_keys:
+                        self._timing_debug = not self._timing_debug
+                    elif event.key == pygame.K_F2 and pygame.K_F2 not in self._pressed_keys:
+                        self._joystick_debug = not self._joystick_debug
                     elif event.key == pygame.K_SPACE:
                         # this is a bit hacky
                         if self._ship is None:
                             self.start_mission()
+                    self._pressed_keys.add(event.key)
                 elif event.type == KEYUP:
-                    if event.key == pygame.K_F1:
-                        self._can_change_debug = True
+                    self._pressed_keys.remove(event.key)
                 elif event.type == JOYDEVICEADDED:
                     joystick = pygame.joystick.Joystick(event.device_index)
                     self._joysticks.append(joystick)
@@ -370,7 +371,7 @@ class Game:
 
             self._info_overlay_sprites.draw(self._display_surf)
 
-            if self._debug:
+            if self._timing_debug or self._joystick_debug:
                 self._display_debug()
             else:
                 self._debug_rect.size = (0, 0)
