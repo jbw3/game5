@@ -6,6 +6,7 @@ from asteroid import Asteroid
 from image_loader import ImageLoader
 from person import Person
 from ship import Ship
+from sprite import Sprite
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
@@ -49,8 +50,15 @@ class Game:
 
         self._display_surf.blit(self._background, (0, 0))
 
-        self._divider = pygame.surface.Surface((8, display_height))
-        self._divider.fill((130, 130, 130))
+        divider_surface = pygame.surface.Surface((8, display_height))
+        divider_surface.fill((130, 130, 130))
+        self._divider = Sprite(divider_surface)
+        self._divider.rect.topleft = (display_width // 2 - 4, 0)
+
+        self._update_rects: list[pygame.rect.Rect] = []
+
+        # need to update the whole screen the first time
+        self._update_rects.append(self._display_surf.get_rect())
 
         self._pressed_keys: set[int] = set()
 
@@ -258,10 +266,10 @@ class Game:
 
         self._ship = None
 
-        # reset backgrounds
+        # reset background
         self._background.blit(self._full_space_background, (0, 0))
-
         self._display_surf.blit(self._background, (0, 0))
+        self._update_rects.append(self._display_surf.get_rect())
 
     def _create_asteroids(self) -> None:
         flight_view_size = self._flight_view_surface.get_size()
@@ -285,6 +293,7 @@ class Game:
 
         self._ship.blit_interior_view(self._interior_view_background)
         self._display_surf.blit(self._interior_view_background, (0, 0))
+        self._update_rects.append(self._interior_view_surface.get_rect())
 
         self._asteroid_create_count = 0
         self._create_asteroids()
@@ -357,19 +366,28 @@ class Game:
             draw_time_start_ms = pygame.time.get_ticks()
             blit_time_start_ms = draw_time_start_ms
 
-            self._display_surf.blit(self._background, (0, 0), self._debug_rect)
+            rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
+            self._update_rects.append(rect)
 
             self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
             self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
             self._info_overlay_sprites.clear(self._display_surf, self._background)
 
-            self._interior_view_sprites.draw(self._interior_view_surface)
-            self._flight_view_sprites.draw(self._flight_view_surface)
+            rects = self._interior_view_sprites.draw(self._interior_view_surface)
+            self._update_rects += rects
 
-            window_width, _ = pygame.display.get_window_size()
-            self._display_surf.blit(self._divider, (window_width // 2 - 4, 0))
+            rects = self._flight_view_sprites.draw(self._flight_view_surface)
+            offset = self._display_surf.get_rect().width // 2
+            for rect in rects:
+                adjusted_rect = rect.copy()
+                adjusted_rect.x += offset
+                self._update_rects.append(adjusted_rect)
 
-            self._info_overlay_sprites.draw(self._display_surf)
+            self._display_surf.blit(self._divider.image, self._divider.rect)
+            self._update_rects.append(self._divider.rect)
+
+            rects = self._info_overlay_sprites.draw(self._display_surf)
+            self._update_rects += rects
 
             if self._timing_debug or self._joystick_debug:
                 self._display_debug()
@@ -379,7 +397,8 @@ class Game:
             blit_time_ms = pygame.time.get_ticks() - blit_time_start_ms
 
             display_update_start_ms = pygame.time.get_ticks()
-            pygame.display.update()
+            pygame.display.update(self._update_rects)
+            self._update_rects.clear()
 
             now = pygame.time.get_ticks()
             display_update_time_ms = now - display_update_start_ms
