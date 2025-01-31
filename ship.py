@@ -166,8 +166,8 @@ class Ship:
         self._background_sprite = Sprite(background_image)
         self._background_sprite.rect.center = interior_view_center
 
-        self._floor: list[pygame.sprite.Sprite] = []
-        self._walls: list[pygame.sprite.Sprite] = []
+        self._floor: list[Sprite] = []
+        self._walls: list[Sprite] = []
         self._consoles: list[Console] = []
 
         self._create_interior(interior_view_center)
@@ -280,11 +280,7 @@ class Ship:
         wall = self._create_wall(min_floor_width*2, Ship.WALL_WIDTH)
         wall.rect.topleft = floor7.rect.bottomleft
 
-        for floor in self._floor:
-            self.game.interior_view_sprites.add(floor)
-
         for wall in self._walls:
-            self.game.interior_view_sprites.add(wall)
             self.game.interior_solid_sprites.add(wall)
 
         door1 = Door(self.game, Door.Orientation.Horizontal, door_gap, door_thickness)
@@ -339,6 +335,12 @@ class Ship:
 
     def blit_interior_view(self, surface: pygame.surface.Surface) -> None:
         surface.blit(self._background_sprite.image, self._background_sprite.rect)
+
+        for floor in self._floor:
+            surface.blit(floor.image, floor.rect)
+
+        for wall in self._walls:
+            surface.blit(wall.image, wall.rect)
 
     def try_activate_console(self, person: 'Person') -> bool:
         for console in self._consoles:
