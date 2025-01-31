@@ -32,7 +32,6 @@ class Game:
         self._display_update_times_ms = [0] * int(Game.MAX_FPS)
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
-        self._display_surf.fill((0, 0, 0))
 
         display_width, display_height = self._display_surf.get_size()
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
@@ -40,18 +39,25 @@ class Game:
 
         self._space_background = self._create_star_background((display_width // 2, display_height))
 
+        self._background = pygame.surface.Surface(pygame.display.get_window_size())
+        self._background.blit(self._space_background, (0, 0))
+        self._background.blit(self._space_background, (display_width//2, 0))
+
+        self._display_surf.blit(self._background, (0, 0))
+
         self._divider = pygame.surface.Surface((8, display_height))
         self._divider.fill((130, 130, 130))
 
         self._debug = False
         self._can_change_debug = True
         self._debug_font = pygame.font.SysFont('Courier', 20)
+        self._debug_rect = pygame.rect.Rect(0, 0, 0, 0)
 
-        self._interior_view_sprites = pygame.sprite.Group()
-        self._flight_view_sprites = pygame.sprite.Group()
+        self._interior_view_sprites = pygame.sprite.RenderUpdates()
+        self._flight_view_sprites = pygame.sprite.RenderUpdates()
         self._interior_solid_sprites = pygame.sprite.Group()
         self._flight_collision_sprites = pygame.sprite.Group()
-        self._info_overlay_sprites = pygame.sprite.Group()
+        self._info_overlay_sprites = pygame.sprite.RenderUpdates()
         self._people_sprites = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
@@ -165,7 +171,10 @@ class Game:
         for s in text_strings:
             text_surface = self._debug_font.render(s, False, DEBUG_TEXT_COLOR)
             self._display_surf.blit(text_surface, (0, y))
-            y += text_surface.get_rect().bottom
+            rect = text_surface.get_rect()
+            y += rect.bottom
+            self._debug_rect.width = max(self._debug_rect.width, rect.width)
+            self._debug_rect.height = y
 
     def _create_star_background(self, size: tuple[int, int]) -> pygame.surface.Surface:
         surface = pygame.surface.Surface(size)
@@ -335,8 +344,11 @@ class Game:
             draw_time_start_ms = pygame.time.get_ticks()
             blit_time_start_ms = draw_time_start_ms
 
-            self._interior_view_surface.blit(self._space_background, (0, 0))
-            self._flight_view_surface.blit(self._space_background, (0, 0))
+            self._display_surf.blit(self._background, (0, 0), self._debug_rect)
+
+            self._interior_view_sprites.clear(self._interior_view_surface, self._space_background)
+            self._flight_view_sprites.clear(self._flight_view_surface, self._space_background)
+            self._info_overlay_sprites.clear(self._display_surf, self._background)
 
             self._interior_view_sprites.draw(self._interior_view_surface)
             self._flight_view_sprites.draw(self._flight_view_surface)
@@ -348,6 +360,8 @@ class Game:
 
             if self._debug:
                 self._display_debug()
+            else:
+                self._debug_rect.size = (0, 0)
 
             blit_time_ms = pygame.time.get_ticks() - blit_time_start_ms
 
