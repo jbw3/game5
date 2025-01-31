@@ -39,9 +39,13 @@ class Game:
 
         self._space_background = self._create_star_background((display_width // 2, display_height))
 
-        self._background = pygame.surface.Surface(pygame.display.get_window_size())
-        self._background.blit(self._space_background, (0, 0))
-        self._background.blit(self._space_background, (display_width//2, 0))
+        self._full_space_background = pygame.surface.Surface(pygame.display.get_window_size())
+        self._full_space_background.blit(self._space_background, (0, 0))
+        self._full_space_background.blit(self._space_background, (display_width//2, 0))
+
+        self._background = self._full_space_background.copy()
+        self._interior_view_background = self._background.subsurface((0, 0), (display_width//2, display_height))
+        self._flight_view_background = self._background.subsurface((display_width//2, 0), (display_width//2, display_height))
 
         self._display_surf.blit(self._background, (0, 0))
 
@@ -253,6 +257,11 @@ class Game:
 
         self._ship = None
 
+        # reset backgrounds
+        self._background.blit(self._full_space_background, (0, 0))
+
+        self._display_surf.blit(self._background, (0, 0))
+
     def _create_asteroids(self) -> None:
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, flight_view_height = flight_view_size
@@ -272,6 +281,9 @@ class Game:
 
         # create ship
         self._ship = Ship(self, interior_view_center)
+
+        self._ship.blit_interior_view(self._interior_view_background)
+        self._display_surf.blit(self._interior_view_background, (0, 0))
 
         self._asteroid_create_count = 0
         self._create_asteroids()
@@ -346,8 +358,8 @@ class Game:
 
             self._display_surf.blit(self._background, (0, 0), self._debug_rect)
 
-            self._interior_view_sprites.clear(self._interior_view_surface, self._space_background)
-            self._flight_view_sprites.clear(self._flight_view_surface, self._space_background)
+            self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
+            self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
             self._info_overlay_sprites.clear(self._display_surf, self._background)
 
             self._interior_view_sprites.draw(self._interior_view_surface)

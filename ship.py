@@ -163,9 +163,8 @@ class Ship:
         self._hull = 3
 
         background_image = game.image_loader.load('ship1.png')
-        background_sprite = Sprite(background_image)
-        background_sprite.rect.center = interior_view_center
-        game.interior_view_sprites.add(background_sprite)
+        self._background_sprite = Sprite(background_image)
+        self._background_sprite.rect.center = interior_view_center
 
         self._floor: list[pygame.sprite.Sprite] = []
         self._walls: list[pygame.sprite.Sprite] = []
@@ -202,7 +201,7 @@ class Ship:
         door_gap = 24
         door_thickness = Ship.WALL_WIDTH - 2
 
-        floor_surface = pygame.surface.Surface((min_floor_width, min_floor_width))
+        floor_surface = pygame.surface.Surface((min_floor_width, min_floor_width)).convert()
         floor_surface.fill(Ship.FLOOR_COLOR)
 
         # bridge
@@ -230,7 +229,7 @@ class Ship:
         floor6.rect.topleft = (floor4.rect.left, floor4.rect.bottom)
         self._floor.append(floor6)
 
-        floor_surface2 = pygame.surface.Surface((min_floor_width*2, min_floor_width))
+        floor_surface2 = pygame.surface.Surface((min_floor_width*2, min_floor_width)).convert()
         floor_surface2.fill(Ship.FLOOR_COLOR)
 
         floor7 = Sprite(floor_surface2)
@@ -328,7 +327,7 @@ class Ship:
             top += 35
 
     def _create_wall(self, width: int, height: int) -> Sprite:
-        surface = pygame.surface.Surface((width, height))
+        surface = pygame.surface.Surface((width, height)).convert()
         surface.fill(Ship.WALL_COLOR)
         wall = Sprite(surface)
         self._walls.append(wall)
@@ -337,6 +336,9 @@ class Ship:
     def _update_hull_info(self):
         self._hull_text.image = self._status_font.render(f'Hull: {self._hull}', True, (252, 10, 30))
         self._hull_text.rect.bottomleft = (10, self.game.interior_view_size[1] - 10)
+
+    def blit_interior_view(self, surface: pygame.surface.Surface) -> None:
+        surface.blit(self._background_sprite.image, self._background_sprite.rect)
 
     def try_activate_console(self, person: 'Person') -> bool:
         for console in self._consoles:
