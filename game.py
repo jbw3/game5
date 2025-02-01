@@ -1,3 +1,5 @@
+import logging
+import os
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
@@ -17,6 +19,11 @@ class Game:
     RESET_GAME_EVENT = pygame.event.custom_type()
 
     def __init__(self):
+        log_dir = 'logs'
+        os.makedirs(log_dir, exist_ok=True)
+        logging.basicConfig(filename=os.path.join(log_dir, 'game.log'), filemode='w', level=logging.INFO)
+        self._logger = logging.getLogger('Game')
+
         pygame.init()
         pygame.font.init()
         pygame.joystick.init()
@@ -317,6 +324,8 @@ class Game:
         quit_game = False
         work_loop_start_ms = pygame.time.get_ticks()
         while True:
+            self._logger.debug(f'Ticks: {pygame.time.get_ticks()}')
+
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
@@ -395,6 +404,9 @@ class Game:
                 self._debug_rect.size = (0, 0)
 
             blit_time_ms = pygame.time.get_ticks() - blit_time_start_ms
+
+            update_rects_str = ', '.join(f'({r.x}, {r.y})' for r in self._update_rects)
+            self._logger.debug(f'Update rects: {update_rects_str}')
 
             display_update_start_ms = pygame.time.get_ticks()
             pygame.display.update(self._update_rects)
