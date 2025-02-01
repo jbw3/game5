@@ -18,10 +18,10 @@ class Game:
 
     RESET_GAME_EVENT = pygame.event.custom_type()
 
-    def __init__(self):
+    def __init__(self, logging_level: str):
         log_dir = 'logs'
         os.makedirs(log_dir, exist_ok=True)
-        logging.basicConfig(filename=os.path.join(log_dir, 'game.log'), filemode='w', level=logging.INFO)
+        logging.basicConfig(filename=os.path.join(log_dir, 'game.log'), filemode='w', level=logging_level)
         self._logger = logging.getLogger('Game')
 
         pygame.init()
