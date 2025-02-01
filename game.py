@@ -196,6 +196,11 @@ class Game:
             self._debug_rect.width = max(self._debug_rect.width, rect.width)
             self._debug_rect.height = y
 
+        # if the debug text overlaps any sprites, they will need to be redrawn
+        for sprite in self._interior_view_sprites:
+            if self._debug_rect.colliderect(sprite.rect):
+                sprite.dirty = 1
+
     def _create_star_background(self, size: tuple[int, int]) -> pygame.surface.Surface:
         surface = pygame.surface.Surface(size)
         surface.fill((0, 0, 0))
