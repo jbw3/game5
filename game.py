@@ -74,11 +74,11 @@ class Game:
         self._debug_font = pygame.font.SysFont('Courier', 20)
         self._debug_rect = pygame.rect.Rect(0, 0, 0, 0)
 
-        self._interior_view_sprites = pygame.sprite.RenderUpdates()
+        self._interior_view_sprites = pygame.sprite.LayeredDirty()
         self._flight_view_sprites = pygame.sprite.RenderUpdates()
         self._interior_solid_sprites = pygame.sprite.Group()
         self._flight_collision_sprites = pygame.sprite.Group()
-        self._info_overlay_sprites = pygame.sprite.RenderUpdates()
+        self._info_overlay_sprites = pygame.sprite.LayeredDirty()
         self._people_sprites = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
@@ -97,7 +97,7 @@ class Game:
         return self._frame_time
 
     @property
-    def interior_view_sprites(self) -> pygame.sprite.Group:
+    def interior_view_sprites(self) -> pygame.sprite.LayeredDirty:
         return self._interior_view_sprites
 
     @property
@@ -113,7 +113,7 @@ class Game:
         return self._flight_collision_sprites
 
     @property
-    def info_overlay_sprites(self) -> pygame.sprite.Group:
+    def info_overlay_sprites(self) -> pygame.sprite.LayeredDirty:
         return self._info_overlay_sprites
 
     @property
@@ -375,8 +375,9 @@ class Game:
             draw_time_start_ms = pygame.time.get_ticks()
             blit_time_start_ms = draw_time_start_ms
 
-            rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
-            self._update_rects.append(rect)
+            if self._debug_rect.width > 0 and self._debug_rect.height > 0:
+                rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
+                self._update_rects.append(rect)
 
             self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
             self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)

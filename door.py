@@ -35,6 +35,7 @@ class Door(Sprite):
         surface.fill(Door.COLOR)
 
         super().__init__(surface)
+        self.dirty = 1
         game.interior_view_sprites.add(self)
 
     @override
@@ -73,3 +74,4 @@ class Door(Sprite):
             self.image.fill(Door.COLORKEY)
             pygame.draw.rect(self.image, Door.COLOR, rect1)
             pygame.draw.rect(self.image, Door.COLOR, rect2)
+            self.dirty = 1

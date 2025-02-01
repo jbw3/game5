@@ -16,7 +16,7 @@ class Console(Sprite):
 
     def __init__(self, game: 'Game', image: pygame.surface.Surface):
         super().__init__(image)
-
+        self.dirty = 1
         game.interior_view_sprites.add(self)
         game.interior_solid_sprites.add(self)
 
@@ -332,6 +332,7 @@ class Ship:
     def _update_hull_info(self):
         self._hull_text.image = self._status_font.render(f'Hull: {self._hull}', True, (252, 10, 30))
         self._hull_text.rect.bottomleft = (10, self.game.interior_view_size[1] - 10)
+        self._hull_text.dirty = 1
 
     def blit_interior_view(self, surface: pygame.surface.Surface) -> None:
         surface.blit(self._background_sprite.image, self._background_sprite.rect)

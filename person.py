@@ -20,6 +20,7 @@ class Person(Sprite):
     def __init__(self, game: 'Game', center: tuple[int, int], joystick: pygame.joystick.JoystickType):
         super().__init__(game.image_loader.load(Person.IMAGE_NAME))
         self.rect.center = center
+        self.dirty = 1
 
         self._x = float(center[0])
         self._y = float(center[1])
@@ -85,6 +86,9 @@ class Person(Sprite):
         if self._joystick.get_button(0):
             if game.ship.try_activate_console(self):
                 self._state = Person.State.Console
+
+        if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
+            self.dirty = 1
 
     def _state_console(self, game: 'Game') -> None:
         if self._joystick.get_button(1):

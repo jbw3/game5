@@ -1,6 +1,6 @@
 import pygame
 
-class Sprite(pygame.sprite.Sprite):
+class Sprite(pygame.sprite.DirtySprite):
     def __init__(self, image: pygame.surface.Surface):
         super().__init__()
         self.image = image
