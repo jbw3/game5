@@ -9,7 +9,7 @@ class ImageLoader:
         image = self._cache.get(name)
         if image is None:
             filename = os.path.join('images', name)
-            image = pygame.image.load(filename)
+            image = pygame.image.load(filename).convert_alpha()
             self._cache[name] = image
 
         return image
