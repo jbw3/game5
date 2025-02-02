@@ -1,8 +1,8 @@
 import pygame
 
 class Stopwatch:
-    def __init__(self, queue_size: int):
-        self._times = [0] * queue_size
+    def __init__(self, num_frames: int):
+        self._times = [0] * num_frames
         self._start = 0
 
     @property
