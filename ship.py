@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 class Console(Sprite):
     PILOT_CONSOLE_IMAGE_NAME = 'pilot_console.png'
     WEAPON_CONSOLE_IMAGE_NAME = 'weapon_console.png'
+    ENGINE_CONSOLE_IMAGE_NAME = 'engine_console.png'
 
     def __init__(self, game: 'Game', image: pygame.surface.Surface):
         super().__init__(image)
@@ -26,11 +27,12 @@ class Console(Sprite):
     def person(self) -> Person|None:
         return self._person
 
+    def _move_person(self, person: Person) -> None:
+        pass
+
     def activate(self, ship: 'Ship', person: Person) -> None:
         self._person = person
-
-        self._person.rect.centerx = self.rect.centerx
-        self._person.rect.top = self.rect.bottom + 4
+        self._move_person(self._person)
 
     def deactivate(self, ship: 'Ship') -> None:
         self._person = None
@@ -41,6 +43,11 @@ class Console(Sprite):
 class PilotConsole(Console):
     def __init__(self, game: 'Game'):
         super().__init__(game, game.image_loader.load(Console.PILOT_CONSOLE_IMAGE_NAME))
+
+    @override
+    def _move_person(self, person: Person) -> None:
+        person.rect.centerx = self.rect.centerx
+        person.rect.top = self.rect.bottom + 4
 
     @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
@@ -67,6 +74,11 @@ class WeaponConsole(Console):
         self._weapon_index = weapon_index
 
     @override
+    def _move_person(self, person: Person) -> None:
+        person.rect.centerx = self.rect.centerx
+        person.rect.top = self.rect.bottom + 4
+
+    @override
     def activate(self, ship: 'Ship', person: Person) -> None:
         super().activate(ship, person)
         ship.enable_aiming(self._weapon_index)
@@ -89,6 +101,15 @@ class WeaponConsole(Console):
 
             if joystick.get_button(5):
                 ship.fire_laser(self._weapon_index)
+
+class EngineConsole(Console):
+    def __init__(self, game: 'Game'):
+        super().__init__(game, game.image_loader.load(Console.ENGINE_CONSOLE_IMAGE_NAME))
+
+    @override
+    def _move_person(self, person: Person) -> None:
+        person.rect.centerx = self.rect.centerx
+        person.rect.bottom = self.rect.top - 4
 
 class AimSprite(Sprite):
     LENGTH = 80
@@ -195,6 +216,8 @@ class Ship:
         for i in range(2):
             aim_sprite = AimSprite(colors[i], self._flight_sprite.rect.center)
             self._aiming.append(aim_sprite)
+
+        self._engine_enabled = True
 
     def _create_interior(self, interior_view_center: tuple[int, int]) -> None:
         min_floor_width = 100
@@ -322,6 +345,11 @@ class Ship:
             self._consoles.append(weapon_console)
             top += 35
 
+        engine_console = EngineConsole(self.game)
+        engine_console.rect.centerx = floor7.rect.centerx
+        engine_console.rect.bottom = floor7.rect.bottom
+        self._consoles.append(engine_console)
+
     def _create_wall(self, width: int, height: int) -> Sprite:
         surface = pygame.surface.Surface((width, height)).convert()
         surface.fill(Ship.WALL_COLOR)
@@ -359,8 +387,15 @@ class Ship:
                 break
 
     def accelerate(self, x_accel: float, y_accel: float) -> None:
-        self._dx += x_accel
-        self._dy += y_accel
+        if self._engine_enabled:
+            self._dx += x_accel
+            self._dy += y_accel
+
+    def enable_engine(self) -> None:
+        self._engine_enabled = True
+
+    def disable_engine(self) -> None:
+        self._engine_enabled = False
 
     def enable_aiming(self, weapon_index: int) -> None:
         self.game.flight_view_sprites.add(self._aiming[weapon_index])

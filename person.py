@@ -86,6 +86,8 @@ class Person(Sprite):
         if self._joystick.get_button(0):
             if game.ship.try_activate_console(self):
                 self._state = Person.State.Console
+                self._x = float(self.rect.centerx)
+                self._y = float(self.rect.centery)
 
         if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
             self.dirty = 1
