@@ -9,6 +9,7 @@ from image_loader import ImageLoader
 from person import Person
 from ship import Ship
 from sprite import Sprite
+from stopwatch import Stopwatch
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
@@ -33,11 +34,12 @@ class Game:
         self._fps_clock = pygame.time.Clock()
         self._frame_time = 0.0
 
-        self._work_times_ms = [0] * int(Game.MAX_FPS)
-        self._update_times_ms = [0] * int(Game.MAX_FPS)
-        self._draw_times_ms = [0] * int(Game.MAX_FPS)
-        self._blit_times_ms = [0] * int(Game.MAX_FPS)
-        self._display_update_times_ms = [0] * int(Game.MAX_FPS)
+        self._stopwatch_num_frames = int(Game.MAX_FPS)
+        self._work_stopwatch = Stopwatch(self._stopwatch_num_frames)
+        self._update_stopwatch = Stopwatch(self._stopwatch_num_frames)
+        self._draw_stopwatch = Stopwatch(self._stopwatch_num_frames)
+        self._blit_stopwatch = Stopwatch(self._stopwatch_num_frames)
+        self._display_update_stopwatch = Stopwatch(self._stopwatch_num_frames)
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
@@ -160,13 +162,12 @@ class Game:
             text_strings.append(f'FPS: {fps:.1f}')
 
             # Frame times
-            num_frames = len(self._work_times_ms)
-            text_strings.append(f'Frame times for past {num_frames} frames:')
-            text_strings.append(self._build_timing_string('Total', 1, self._work_times_ms))
-            text_strings.append(self._build_timing_string('Update', 1, self._update_times_ms))
-            text_strings.append(self._build_timing_string('Draw', 1, self._draw_times_ms))
-            text_strings.append(self._build_timing_string('Blit', 2, self._blit_times_ms))
-            text_strings.append(self._build_timing_string('Display', 2, self._display_update_times_ms))
+            text_strings.append(f'Frame times for past {self._stopwatch_num_frames} frames:')
+            text_strings.append(self._build_timing_string('Total', 1, self._work_stopwatch.times))
+            text_strings.append(self._build_timing_string('Update', 1, self._update_stopwatch.times))
+            text_strings.append(self._build_timing_string('Draw', 1, self._draw_stopwatch.times))
+            text_strings.append(self._build_timing_string('Blit', 2, self._blit_stopwatch.times))
+            text_strings.append(self._build_timing_string('Display', 2, self._display_update_stopwatch.times))
 
         if self._joystick_debug:
             # Joystick info
@@ -327,7 +328,7 @@ class Game:
 
     def mainloop(self) -> None:
         quit_game = False
-        work_loop_start_ms = pygame.time.get_ticks()
+        self._work_stopwatch.start()
         while True:
             self._logger.debug(f'Ticks: {pygame.time.get_ticks()}')
 
@@ -364,7 +365,7 @@ class Game:
 
             # Update sprites
 
-            update_time_start_ms = pygame.time.get_ticks()
+            self._update_stopwatch.start()
 
             if self._playing_mission and self._ship is not None:
                 self._ship.update(self)
@@ -373,12 +374,12 @@ class Game:
             for sprite in self.flight_view_sprites:
                 sprite.update(self)
 
-            update_time_ms = pygame.time.get_ticks() - update_time_start_ms
+            self._update_stopwatch.stop()
 
             # Draw sprites
 
-            draw_time_start_ms = pygame.time.get_ticks()
-            blit_time_start_ms = draw_time_start_ms
+            self._draw_stopwatch.start()
+            self._blit_stopwatch.start()
 
             if self._debug_rect.width > 0 and self._debug_rect.height > 0:
                 rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
@@ -409,36 +410,21 @@ class Game:
             else:
                 self._debug_rect.size = (0, 0)
 
-            blit_time_ms = pygame.time.get_ticks() - blit_time_start_ms
+            self._blit_stopwatch.stop()
 
             update_rects_str = ', '.join(f'({r.x}, {r.y})' for r in self._update_rects)
             self._logger.debug(f'Update rects: {update_rects_str}')
 
-            display_update_start_ms = pygame.time.get_ticks()
+            self._display_update_stopwatch.start()
+
             pygame.display.update(self._update_rects)
             self._update_rects.clear()
 
-            now = pygame.time.get_ticks()
-            display_update_time_ms = now - display_update_start_ms
-            draw_time_ms = now - draw_time_start_ms
-
-            self._update_times_ms.append(update_time_ms)
-            self._update_times_ms.pop(0)
-
-            self._draw_times_ms.append(draw_time_ms)
-            self._draw_times_ms.pop(0)
-
-            self._blit_times_ms.append(blit_time_ms)
-            self._blit_times_ms.pop(0)
-
-            self._display_update_times_ms.append(display_update_time_ms)
-            self._display_update_times_ms.pop(0)
-
-            work_time_ms = pygame.time.get_ticks() - work_loop_start_ms
-            self._work_times_ms.append(work_time_ms)
-            self._work_times_ms.pop(0)
+            self._display_update_stopwatch.stop()
+            self._draw_stopwatch.stop()
+            self._work_stopwatch.stop()
 
             frame_time_ms = self._fps_clock.tick(Game.MAX_FPS)
             self._frame_time = frame_time_ms / 1000
 
-            work_loop_start_ms = pygame.time.get_ticks()
+            self._work_stopwatch.start()
