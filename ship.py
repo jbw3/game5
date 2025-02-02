@@ -111,6 +111,11 @@ class EngineConsole(Console):
         person.rect.centerx = self.rect.centerx
         person.rect.bottom = self.rect.top - 4
 
+    @override
+    def activate(self, ship: 'Ship', person: Person) -> None:
+        super().activate(ship, person)
+        ship.enable_engine()
+
 class AimSprite(Sprite):
     LENGTH = 80
 
@@ -469,8 +474,11 @@ class Ship:
             self._dx = -self._dx
             self._dy = -self._dy
 
-            self._hull -= 1
-            self._update_hull_info()
-            if self._hull <= 0:
-                game.flight_view_sprites.remove(self._flight_sprite)
-                game.end_mission()
+            if self._engine_enabled:
+                self.disable_engine()
+            else:
+                self._hull -= 1
+                self._update_hull_info()
+                if self._hull <= 0:
+                    game.flight_view_sprites.remove(self._flight_sprite)
+                    game.end_mission()
