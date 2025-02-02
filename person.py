@@ -15,7 +15,7 @@ class Person(Sprite):
         Console = 1
 
     IMAGE_NAME = 'person.png'
-    MAX_SPEED = 60.0
+    MAX_SPEED = 70.0
 
     def __init__(self, game: 'Game', center: tuple[int, int], joystick: pygame.joystick.JoystickType):
         super().__init__(game.image_loader.load(Person.IMAGE_NAME))

@@ -192,7 +192,7 @@ class AimSprite(Sprite):
 
 class Ship:
     MAX_ACCELERATION = 5.0
-    LASER_DELAY = 600 # ms
+    LASER_DELAY = 500 # ms
     AIM_ANGLE_RATE = 120.0 # degrees
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
@@ -207,7 +207,7 @@ class Ship:
         self._dy = 0.0
 
         # start ship with a small, random velocity
-        while abs(self._dx) < 1.0 and abs(self._dy) < 1.0:
+        while (self._dx**2 + self._dy**2)**0.5 < 1.0:
             self._dx = random.random() * 10 - 5
             self._dy = random.random() * 10 - 5
 
