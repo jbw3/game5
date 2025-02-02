@@ -11,10 +11,6 @@ if TYPE_CHECKING:
     from game import Game
 
 class Console(Sprite):
-    PILOT_CONSOLE_IMAGE_NAME = 'pilot_console.png'
-    WEAPON_CONSOLE_IMAGE_NAME = 'weapon_console.png'
-    ENGINE_CONSOLE_IMAGE_NAME = 'engine_console.png'
-
     def __init__(self, game: 'Game', image: pygame.surface.Surface):
         super().__init__(image)
         self.dirty = 1
@@ -41,8 +37,11 @@ class Console(Sprite):
         pass
 
 class PilotConsole(Console):
+    IMAGE_NAME = 'pilot_console.png'
+    ERROR_IMAGE_NAME = 'pilot_console_error.png'
+
     def __init__(self, game: 'Game'):
-        super().__init__(game, game.image_loader.load(Console.PILOT_CONSOLE_IMAGE_NAME))
+        super().__init__(game, game.image_loader.load(PilotConsole.IMAGE_NAME))
 
     @override
     def _move_person(self, person: Person) -> None:
@@ -68,9 +67,22 @@ class PilotConsole(Console):
 
             ship.accelerate(x_accel, y_accel)
 
+    def set_error(self, game: 'Game', is_error: bool) -> None:
+        old_rect = self.rect.copy()
+
+        if is_error:
+            self.image = game.image_loader.load(PilotConsole.ERROR_IMAGE_NAME)
+        else:
+            self.image = game.image_loader.load(PilotConsole.IMAGE_NAME)
+
+        self.rect = old_rect
+        self.dirty = 1
+
 class WeaponConsole(Console):
+    IMAGE_NAME = 'weapon_console.png'
+
     def __init__(self, game: 'Game', weapon_index: int):
-        super().__init__(game, game.image_loader.load(Console.WEAPON_CONSOLE_IMAGE_NAME))
+        super().__init__(game, game.image_loader.load(WeaponConsole.IMAGE_NAME))
         self._weapon_index = weapon_index
 
     @override
@@ -103,8 +115,11 @@ class WeaponConsole(Console):
                 ship.fire_laser(self._weapon_index)
 
 class EngineConsole(Console):
+    IMAGE_NAME = 'engine_console.png'
+    ERROR_IMAGE_NAME = 'engine_console_error.png'
+
     def __init__(self, game: 'Game'):
-        super().__init__(game, game.image_loader.load(Console.ENGINE_CONSOLE_IMAGE_NAME))
+        super().__init__(game, game.image_loader.load(EngineConsole.IMAGE_NAME))
 
     @override
     def _move_person(self, person: Person) -> None:
@@ -115,6 +130,17 @@ class EngineConsole(Console):
     def activate(self, ship: 'Ship', person: Person) -> None:
         super().activate(ship, person)
         ship.enable_engine()
+
+    def set_error(self, game: 'Game', is_error: bool) -> None:
+        old_rect = self.rect.copy()
+
+        if is_error:
+            self.image = game.image_loader.load(EngineConsole.ERROR_IMAGE_NAME)
+        else:
+            self.image = game.image_loader.load(EngineConsole.IMAGE_NAME)
+
+        self.rect = old_rect
+        self.dirty = 1
 
 class AimSprite(Sprite):
     LENGTH = 80
@@ -336,10 +362,10 @@ class Ship:
         door8.rect.midbottom = (floor5.rect.right, floor5.rect.bottom - Ship.WALL_WIDTH//2)
 
         # pilot console
-        pilot_console = PilotConsole(self.game)
-        pilot_console.rect.centerx = floor1.rect.centerx
-        pilot_console.rect.top = floor1.rect.top
-        self._consoles.append(pilot_console)
+        self._pilot_console = PilotConsole(self.game)
+        self._pilot_console.rect.centerx = floor1.rect.centerx
+        self._pilot_console.rect.top = floor1.rect.top
+        self._consoles.append(self._pilot_console)
 
         # weapon consoles
         top = floor1.rect.top + 25
@@ -350,10 +376,10 @@ class Ship:
             self._consoles.append(weapon_console)
             top += 35
 
-        engine_console = EngineConsole(self.game)
-        engine_console.rect.centerx = floor7.rect.centerx
-        engine_console.rect.bottom = floor7.rect.bottom
-        self._consoles.append(engine_console)
+        self._engine_console = EngineConsole(self.game)
+        self._engine_console.rect.centerx = floor7.rect.centerx
+        self._engine_console.rect.bottom = floor7.rect.bottom
+        self._consoles.append(self._engine_console)
 
     def _create_wall(self, width: int, height: int) -> Sprite:
         surface = pygame.surface.Surface((width, height)).convert()
@@ -398,9 +424,13 @@ class Ship:
 
     def enable_engine(self) -> None:
         self._engine_enabled = True
+        self._pilot_console.set_error(self.game, False)
+        self._engine_console.set_error(self.game, False)
 
     def disable_engine(self) -> None:
         self._engine_enabled = False
+        self._pilot_console.set_error(self.game, True)
+        self._engine_console.set_error(self.game, True)
 
     def enable_aiming(self, weapon_index: int) -> None:
         self.game.flight_view_sprites.add(self._aiming[weapon_index])
