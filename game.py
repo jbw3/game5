@@ -5,6 +5,7 @@ from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
 
 from asteroid import Asteroid
+from controller import Controller
 from image_loader import ImageLoader
 from person import Person
 from ship import Ship
@@ -177,7 +178,8 @@ class Game:
             for joystick in self._joysticks:
                 i = joystick.get_instance_id()
                 name = joystick.get_name()
-                text_strings.append(f' {i}: {name}')
+                guid = joystick.get_guid()
+                text_strings.append(f' {i}: {guid}, {name}')
 
                 axes_str = ', '.join(f'{j}: {joystick.get_axis(j):.1f}' for j in range(joystick.get_numaxes()))
                 text_strings.append(f'  axes: {axes_str}')
@@ -319,7 +321,8 @@ class Game:
                 x = interior_view_center[0] + 20
             y = interior_view_center[1] - 130 + (i // 2 * 15)
 
-            person = Person(self, (x, y), joystick)
+            controller = Controller(joystick)
+            person = Person(self, (x, y), controller)
             self._people_sprites.add(person)
 
     def end_mission(self) -> None:
@@ -351,11 +354,19 @@ class Game:
                 elif event.type == JOYDEVICEADDED:
                     joystick = pygame.joystick.Joystick(event.device_index)
                     self._joysticks.append(joystick)
+                    joystick_id = joystick.get_instance_id()
+                    guid = joystick.get_guid()
+                    name = joystick.get_name()
+                    self._logger.info(f'Joystick added: {joystick_id}, {guid}, {name}')
                 elif event.type == JOYDEVICEREMOVED:
                     idx = event.instance_id
                     for joystick in self._joysticks:
                         if joystick.get_id() == idx:
                             self._joysticks.pop(idx)
+                            joystick_id = joystick.get_instance_id()
+                            guid = joystick.get_guid()
+                            name = joystick.get_name()
+                            self._logger.info(f'Joystick removed: {joystick_id}, {guid}, {name}')
                             break
                 elif event.type == Game.RESET_GAME_EVENT:
                     self._reset_game()

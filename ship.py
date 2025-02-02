@@ -2,6 +2,7 @@ import pygame
 import random
 from typing import TYPE_CHECKING, override
 
+from controller import Controller
 from door import Door
 from laser import Laser
 from person import Person
@@ -51,15 +52,15 @@ class PilotConsole(Console):
     @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
         if self._person is not None:
-            joystick = self._person.joystick
+            controller = self._person.controller
 
-            a0 = joystick.get_axis(0)
+            a0 = controller.get_move_x_axis()
             if a0 < -0.2 or a0 > 0.2:
                 x_accel = a0 * Ship.MAX_ACCELERATION
             else:
                 x_accel = 0.0
 
-            a1 = joystick.get_axis(1)
+            a1 = controller.get_move_y_axis()
             if a1 < -0.2 or a1 > 0.2:
                 y_accel = a1 * Ship.MAX_ACCELERATION
             else:
@@ -103,15 +104,15 @@ class WeaponConsole(Console):
     @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
         if self._person is not None:
-            joystick = self._person.joystick
+            controller = self._person.controller
 
-            a0 = joystick.get_axis(0)
+            a0 = controller.get_move_x_axis()
             if a0 < -0.2:
                 ship.rotate_aim_counterclockwise(self._weapon_index)
             elif a0 > 0.2:
                 ship.rotate_aim_clockwise(self._weapon_index)
 
-            if joystick.get_button(5):
+            if controller.get_trigger_button():
                 ship.fire_laser(self._weapon_index)
 
 class EngineConsole(Console):

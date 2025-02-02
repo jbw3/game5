@@ -3,6 +3,7 @@ import math
 import pygame
 from typing import TYPE_CHECKING, override
 
+from controller import Controller
 from sprite import Sprite
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ class Person(Sprite):
     IMAGE_NAME = 'person.png'
     MAX_SPEED = 70.0
 
-    def __init__(self, game: 'Game', center: tuple[int, int], joystick: pygame.joystick.JoystickType):
+    def __init__(self, game: 'Game', center: tuple[int, int], controller: Controller):
         super().__init__(game.image_loader.load(Person.IMAGE_NAME))
         self.rect.center = center
         self.dirty = 1
@@ -27,12 +28,12 @@ class Person(Sprite):
 
         game.interior_view_sprites.add(self)
 
-        self._joystick = joystick
+        self._controller = controller
         self._state: Person.State = Person.State.Moving
 
     @property
-    def joystick(self) -> pygame.joystick.JoystickType:
-        return self._joystick
+    def controller(self) -> Controller:
+        return self._controller
 
     @override
     def update(self, game: 'Game') -> None:
@@ -47,13 +48,13 @@ class Person(Sprite):
     def _state_moving(self, game: 'Game') -> None:
         last_rect = self.rect.copy()
 
-        a0 = self._joystick.get_axis(0)
+        a0 = self._controller.get_move_x_axis()
         if abs(a0) > 0.2:
             x_axis = a0
         else:
             x_axis = 0.0
 
-        a1 = self._joystick.get_axis(1)
+        a1 = self._controller.get_move_y_axis()
         if abs(a1) > 0.2:
             y_axis = a1
         else:
@@ -83,7 +84,7 @@ class Person(Sprite):
                 self.rect.right = sprite.rect.left
                 self._x = float(self.rect.centerx)
 
-        if self._joystick.get_button(0):
+        if self._controller.get_activate_button():
             if game.ship.try_activate_console(self):
                 self._state = Person.State.Console
                 self._x = float(self.rect.centerx)
@@ -93,6 +94,6 @@ class Person(Sprite):
             self.dirty = 1
 
     def _state_console(self, game: 'Game') -> None:
-        if self._joystick.get_button(1):
+        if self._controller.get_deactivate_button():
             game.ship.deactivate_console(self)
             self._state = Person.State.Moving
