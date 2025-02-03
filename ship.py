@@ -4,6 +4,7 @@ import pygame
 import random
 from typing import TYPE_CHECKING, override
 
+from animation import Animation
 from door import Door
 from laser import Laser
 from person import Person
@@ -548,7 +549,21 @@ class Ship:
             self._hull = max(0, self._hull - hit_points)
             self._update_hull_info()
             if self._hull <= 0:
-                for i in range(len(self._aiming)):
-                    self.disable_aiming(i)
-                game.flight_view_sprites.remove(self._flight_sprite)
-                game.end_mission()
+                self.destroy()
+
+    def destroy(self) -> None:
+        # remove graphics
+        for i in range(len(self._aiming)):
+            self.disable_aiming(i)
+        self.game.flight_view_sprites.remove(self._flight_sprite)
+
+        # create explosion graphic
+        explosion_images = [
+            self.game.image_loader.load(f'explosion{i+1}.png')
+            for i in range(8)
+        ]
+        explosion = Animation(explosion_images, 62)
+        explosion.rect.center = self._flight_sprite.rect.center
+        self.game.flight_view_sprites.add(explosion)
+
+        self.game.end_mission()

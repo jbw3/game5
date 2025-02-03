@@ -471,6 +471,9 @@ class Game:
                         sprite.update(self)
                     for sprite in self.flight_view_sprites:
                         sprite.update(self)
+                case Game.State.PostMission:
+                    for sprite in self.flight_view_sprites:
+                        sprite.update(self)
 
             self._update_stopwatch.stop()
 
