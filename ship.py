@@ -484,7 +484,7 @@ class Ship:
             aiming.origin = self._flight_sprite.rect.center
 
         collision = False
-        force = 0.0
+        total_force = 0.0
         for sprite in pygame.sprite.spritecollide(self._flight_sprite, game.flight_collision_sprites, False):
             # elastic collision equations
 
@@ -492,8 +492,6 @@ class Ship:
             my_mass = self._flight_sprite.rect.width * self._flight_sprite.rect.height
             other_mass = sprite.rect.width * sprite.rect.height
             mass_sum = my_mass + other_mass
-
-            old_vel_magnitude = (self._dx**2 + self._dy**2)**0.5
 
             # rotate velocities so collision can be calculated for x component
             angle = math.atan2(sprite.y - self._y, sprite.x - self._x)
@@ -516,10 +514,10 @@ class Ship:
             other_dx = other_new_vx * cos_negative_angle - other_vy * sin_negative_angle
             other_dy = other_new_vx * sin_negative_angle + other_vy * cos_negative_angle
 
-            new_vel_magnitude = (self._dx**2 + self._dy**2)**0.5
-            force += my_mass * abs(old_vel_magnitude - new_vel_magnitude)
+            force = my_mass * abs(my_new_vx - my_vx)
+            total_force += force
 
-            sprite.collide(game, other_dx, other_dy)
+            sprite.collide(game, other_dx, other_dy, force)
             collision = True
 
             my_x = self._flight_sprite.rect.x
@@ -540,8 +538,8 @@ class Ship:
                 self._x = float(self._flight_sprite.rect.centerx)
 
         if collision:
-            hit_points = int(force / 20_000)
-            self._logger.info(f'Collision: force: {force:.1f}, hit points: {hit_points}')
+            hit_points = int(total_force / 20_000)
+            self._logger.info(f'Collision: total force: {total_force:.1f}, hit points: {hit_points}')
 
             if self._engine_enabled and hit_points > 0:
                 self.disable_engine()

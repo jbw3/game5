@@ -97,9 +97,15 @@ class Asteroid(Sprite):
             self.rect.left = flight_view_size[0]
             self._x = float(self.rect.centerx)
 
-    def collide(self, game: 'Game', new_dx: float, new_dy: float) -> None:
+    def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         self._dx = new_dx
         self._dy = new_dy
+
+        if ((self._size == Asteroid.Size.Small and force >= 125_000) or
+            (self._size == Asteroid.Size.Medium and force >= 250_000) or
+            (self._size == Asteroid.Size.Big and force >= 500_000)
+            ):
+            self.damage(game)
 
     def damage(self, game: 'Game') -> None:
         game.flight_view_sprites.remove(self)
