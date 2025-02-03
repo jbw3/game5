@@ -1,8 +1,9 @@
+import math
+import logging
 import pygame
 import random
 from typing import TYPE_CHECKING, override
 
-from controller import Controller
 from door import Door
 from laser import Laser
 from person import Person
@@ -201,6 +202,7 @@ class Ship:
 
     def __init__(self, game: 'Game', interior_view_center: tuple[int, int]):
         self.game = game
+        self._logger = logging.getLogger('Ship')
         flight_view_center = (game.flight_view_size[0] // 2, game.flight_view_size[1] // 2)
         self._x = float(flight_view_center[0])
         self._y = float(flight_view_center[1])
@@ -213,7 +215,7 @@ class Ship:
             self._dy = random.random() * 10 - 5
 
         self._next_available_laser_fire = [0, 0]
-        self._hull = 3
+        self._hull = 10
 
         background_image = game.image_loader.load('ship1.png')
         self._background_sprite = Sprite(background_image)
@@ -482,36 +484,73 @@ class Ship:
             aiming.origin = self._flight_sprite.rect.center
 
         collision = False
+        force = 0.0
         for sprite in pygame.sprite.spritecollide(self._flight_sprite, game.flight_collision_sprites, False):
-            sprite.collide(game)
+            # elastic collision equations
+
+            # use sprite area as "mass"
+            my_mass = self._flight_sprite.rect.width * self._flight_sprite.rect.height
+            other_mass = sprite.rect.width * sprite.rect.height
+            mass_sum = my_mass + other_mass
+
+            old_vel_magnitude = (self._dx**2 + self._dy**2)**0.5
+
+            # rotate velocities so collision can be calculated for x component
+            angle = math.atan2(sprite.y - self._y, sprite.x - self._x)
+            sin_angle = math.sin(angle)
+            cos_angle = math.cos(angle)
+            my_vx = self._dx * cos_angle - self._dy * sin_angle
+            my_vy = self._dx * sin_angle + self._dy * cos_angle
+            other_vx = sprite.dx * cos_angle - sprite.dy * sin_angle
+            other_vy = sprite.dx * sin_angle + sprite.dy * cos_angle
+
+            # calculate new x components
+            my_new_vx = (my_mass - other_mass) / mass_sum * my_vx + 2 * other_mass / mass_sum * other_vx
+            other_new_vx = 2 * my_mass / mass_sum * my_vx + (other_mass - my_mass) / mass_sum * other_vx
+
+            # rotate the velocity components back
+            sin_negative_angle = math.sin(-angle)
+            cos_negative_angle = math.cos(-angle)
+            self._dx = my_new_vx * cos_negative_angle - my_vy * sin_negative_angle
+            self._dy = my_new_vx * sin_negative_angle + my_vy * cos_negative_angle
+            other_dx = other_new_vx * cos_negative_angle - other_vy * sin_negative_angle
+            other_dy = other_new_vx * sin_negative_angle + other_vy * cos_negative_angle
+
+            new_vel_magnitude = (self._dx**2 + self._dy**2)**0.5
+            force += my_mass * abs(old_vel_magnitude - new_vel_magnitude)
+
+            sprite.collide(game, other_dx, other_dy)
             collision = True
 
-            if last_rect.top >= sprite.rect.bottom:
-                self._flight_sprite.rect.top = sprite.rect.bottom
+            my_x = self._flight_sprite.rect.x
+            my_y = self._flight_sprite.rect.y
+            other_x = sprite.rect.x
+            other_y = sprite.rect.y
+            if abs(other_x - my_x) < abs(other_y - my_y):
+                if my_y < other_y:
+                    self._flight_sprite.rect.bottom = sprite.rect.top
+                else:
+                    self._flight_sprite.rect.top = sprite.rect.bottom
                 self._y = float(self._flight_sprite.rect.centery)
-            elif last_rect.bottom <= sprite.rect.top:
-                self._flight_sprite.rect.bottom = sprite.rect.top
-                self._y = float(self._flight_sprite.rect.centery)
-
-            if last_rect.left >= sprite.rect.right:
-                self._flight_sprite.rect.left = sprite.rect.right
-                self._x = float(self._flight_sprite.rect.centerx)
-            elif last_rect.right <= sprite.rect.left:
-                self._flight_sprite.rect.right = sprite.rect.left
+            else:
+                if my_x < other_x:
+                    self._flight_sprite.rect.right = sprite.rect.left
+                else:
+                    self._flight_sprite.rect.left = sprite.rect.right
                 self._x = float(self._flight_sprite.rect.centerx)
 
         if collision:
-            # TODO: use elastic collision equations
-            self._dx = -self._dx
-            self._dy = -self._dy
+            hit_points = int(force / 20_000)
+            self._logger.info(f'Collision: force: {force:.1f}, hit points: {hit_points}')
 
-            if self._engine_enabled:
+            if self._engine_enabled and hit_points > 0:
                 self.disable_engine()
-            else:
-                self._hull -= 1
-                self._update_hull_info()
-                if self._hull <= 0:
-                    for i in range(len(self._aiming)):
-                        self.disable_aiming(i)
-                    game.flight_view_sprites.remove(self._flight_sprite)
-                    game.end_mission()
+                hit_points -= 1
+
+            self._hull = max(0, self._hull - hit_points)
+            self._update_hull_info()
+            if self._hull <= 0:
+                for i in range(len(self._aiming)):
+                    self.disable_aiming(i)
+                game.flight_view_sprites.remove(self._flight_sprite)
+                game.end_mission()

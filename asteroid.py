@@ -56,6 +56,22 @@ class Asteroid(Sprite):
             self._dx = float(random.randint(-Asteroid.MAX_SPEED, Asteroid.MAX_SPEED))
             self._dy = float(random.randint(-Asteroid.MAX_SPEED, Asteroid.MAX_SPEED))
 
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @property
+    def dx(self) -> float:
+        return self._dx
+
+    @property
+    def dy(self) -> float:
+        return self._dy
+
     @override
     def update(self, game: 'Game') -> None:
         self._x += self._dx * game.frame_time
@@ -81,10 +97,9 @@ class Asteroid(Sprite):
             self.rect.left = flight_view_size[0]
             self._x = float(self.rect.centerx)
 
-    def collide(self, game: 'Game') -> None:
-        # TODO: use elastic collision equations
-        self._dx = -self._dx
-        self._dy = -self._dy
+    def collide(self, game: 'Game', new_dx: float, new_dy: float) -> None:
+        self._dx = new_dx
+        self._dy = new_dy
 
     def damage(self, game: 'Game') -> None:
         game.flight_view_sprites.remove(self)
