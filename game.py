@@ -381,10 +381,6 @@ class Game:
                         self._timing_debug = not self._timing_debug
                     elif event.key == pygame.K_F2 and pygame.K_F2 not in self._pressed_keys:
                         self._joystick_debug = not self._joystick_debug
-                    elif event.key == pygame.K_SPACE:
-                        # this is a bit hacky
-                        if self._ship is None:
-                            self.start_mission()
                     self._pressed_keys.add(event.key)
                 elif event.type == KEYUP:
                     self._pressed_keys.remove(event.key)
