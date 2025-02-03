@@ -15,6 +15,57 @@ from stopwatch import Stopwatch
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
+class SetupMenu:
+    TextColor = (240, 11, 32)
+
+    def __init__(self):
+        self._font = pygame.font.SysFont('Courier', 60)
+        self._num_players = 1
+        self._axis_was_centered = True
+        self._button_was_released = True
+
+    def _render_num_players_surface(self) -> pygame.surface.Surface:
+        text_surface = self._font.render(f'Players: < {self._num_players} >', True, SetupMenu.TextColor)
+        return text_surface
+
+    def start(self, game: 'Game') -> None:
+        window_width, window_height = pygame.display.get_window_size()
+
+        self._num_players = min(self._num_players, len(game.controllers))
+
+        self._num_players_sprite = Sprite(self._render_num_players_surface())
+        self._num_players_sprite.rect.center = (window_width // 2, window_height // 2 - 30)
+        game.setup_menu_sprites.add(self._num_players_sprite)
+
+    def update(self, game: 'Game') -> None:
+        old_num_players = self._num_players
+
+        num_controllers = len(game.controllers)
+        self._num_players = min(self._num_players, num_controllers)
+
+        if num_controllers > 0:
+            if self._num_players == 0:
+                self._num_players = 1
+
+            controller = game.controllers[0]
+            axis = controller.get_move_x_axis()
+            if abs(axis) <= 0.4:
+                self._axis_was_centered = True
+            elif self._axis_was_centered:
+                self._axis_was_centered = False
+                if axis < -0.4 and self._num_players > 1:
+                    self._num_players -= 1
+                elif axis > 0.4 and self._num_players < num_controllers:
+                    self._num_players += 1
+
+        if self._num_players != old_num_players:
+            self._num_players_sprite.image = self._render_num_players_surface()
+            self._num_players_sprite.dirty = 1
+
+        if controller.get_activate_button():
+            game.setup_menu_sprites.empty()
+            game.start_mission(self._num_players)
+
 class Game:
     MAX_FPS = 60.0
     MAX_FRAME_TIME_MS = 1000 / MAX_FPS
@@ -51,7 +102,7 @@ class Game:
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
-        self._setup_font = pygame.font.SysFont('Courier', 60)
+        self._setup_menu = SetupMenu()
 
         display_width, display_height = self._display_surf.get_size()
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
@@ -96,6 +147,7 @@ class Game:
         self._people_sprites = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
+        self._controllers: list[Controller] = []
 
         self._state: Game.State = Game.State.Setup
         self._ship: Ship|None = None
@@ -109,6 +161,10 @@ class Game:
     @property
     def frame_time(self) -> float:
         return self._frame_time
+
+    @property
+    def setup_menu_sprites(self) -> pygame.sprite.LayeredDirty:
+        return self._setup_menu_sprites
 
     @property
     def interior_view_sprites(self) -> pygame.sprite.LayeredDirty:
@@ -133,6 +189,10 @@ class Game:
     @property
     def people_sprites(self) -> pygame.sprite.Group:
         return self._people_sprites
+
+    @property
+    def controllers(self) -> list[Controller]:
+        return self._controllers
 
     @property
     def interior_view_size(self) -> tuple[int, int]:
@@ -306,28 +366,16 @@ class Game:
             Asteroid(self, Asteroid.Size.Big, (x, y))
 
     def start_setup(self) -> None:
-        window_width, window_height = pygame.display.get_window_size()
-
         self._state = Game.State.Setup
 
-        text_surface = self._setup_font.render('Press any button to start', True, (240, 10, 30))
-        text = Sprite(text_surface)
-        text.rect.center = (window_width // 2, window_height // 2)
-        self._setup_menu_sprites.add(text)
+        self._setup_menu.start(self)
 
         # reset background
         self._background.blit(self._setup_background, (0, 0))
         self._display_surf.blit(self._background, (0, 0))
         self._update_rects.append(self._display_surf.get_rect())
 
-    def _setup_menu_update(self) -> None:
-        for joystick in self._joysticks:
-            for i in range(joystick.get_numbuttons()):
-                if joystick.get_button(i):
-                    self.start_mission()
-                    return
-
-    def start_mission(self) -> None:
+    def start_mission(self, num_players: int) -> None:
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
@@ -349,14 +397,14 @@ class Game:
         self._create_asteroids()
 
         # create people
-        for i, joystick in enumerate(self._joysticks):
+        for i in range(num_players):
             if i % 2 == 0:
                 x = interior_view_center[0] - 20
             else:
                 x = interior_view_center[0] + 20
             y = interior_view_center[1] - 130 + (i // 2 * 15)
 
-            controller = Controller(joystick)
+            controller = self._controllers[i]
             person = Person(self, (x, y), controller)
             self._people_sprites.add(person)
 
@@ -387,6 +435,7 @@ class Game:
                 elif event.type == JOYDEVICEADDED:
                     joystick = pygame.joystick.Joystick(event.device_index)
                     self._joysticks.append(joystick)
+                    self._controllers.append(Controller(joystick))
                     joystick_id = joystick.get_instance_id()
                     guid = joystick.get_guid()
                     name = joystick.get_name()
@@ -396,6 +445,7 @@ class Game:
                     for joystick in self._joysticks:
                         if joystick.get_id() == idx:
                             self._joysticks.pop(idx)
+                            self._controllers.pop(idx)
                             joystick_id = joystick.get_instance_id()
                             guid = joystick.get_guid()
                             name = joystick.get_name()
@@ -413,7 +463,7 @@ class Game:
 
             match self._state:
                 case Game.State.Setup:
-                    self._setup_menu_update()
+                    self._setup_menu.update(self)
                 case Game.State.Mission:
                     if self._ship is not None:
                         self._ship.update(self)
