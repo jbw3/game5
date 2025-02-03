@@ -1,3 +1,4 @@
+from enum import Enum, unique
 import logging
 import os
 import pygame
@@ -19,6 +20,12 @@ class Game:
     MAX_FRAME_TIME_MS = 1000 / MAX_FPS
 
     RESET_GAME_EVENT = pygame.event.custom_type()
+
+    @unique
+    class State(Enum):
+        Setup = 0
+        Mission = 1
+        PostMission = 2
 
     def __init__(self, logging_level: str):
         log_dir = 'logs'
@@ -44,17 +51,20 @@ class Game:
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
+        self._setup_font = pygame.font.SysFont('Courier', 60)
+
         display_width, display_height = self._display_surf.get_size()
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
         self._flight_view_surface = self._display_surf.subsurface((display_width//2, 0), (display_width//2, display_height))
 
-        self._space_background = self._create_star_background((display_width // 2, display_height))
+        self._setup_background = self._create_star_background((display_width, display_height))
 
-        self._full_space_background = pygame.surface.Surface(pygame.display.get_window_size())
-        self._full_space_background.blit(self._space_background, (0, 0))
-        self._full_space_background.blit(self._space_background, (display_width//2, 0))
+        space_background = self._create_star_background((display_width // 2, display_height))
+        self._mission_background = pygame.surface.Surface(pygame.display.get_window_size())
+        self._mission_background.blit(space_background, (0, 0))
+        self._mission_background.blit(space_background, (display_width//2, 0))
 
-        self._background = self._full_space_background.copy()
+        self._background = self._mission_background.copy()
         self._interior_view_background = self._background.subsurface((0, 0), (display_width//2, display_height))
         self._flight_view_background = self._background.subsurface((display_width//2, 0), (display_width//2, display_height))
 
@@ -77,6 +87,7 @@ class Game:
         self._debug_font = pygame.font.SysFont('Courier', 20)
         self._debug_rect = pygame.rect.Rect(0, 0, 0, 0)
 
+        self._setup_menu_sprites = pygame.sprite.LayeredDirty()
         self._interior_view_sprites = pygame.sprite.LayeredDirty()
         self._flight_view_sprites = pygame.sprite.RenderUpdates()
         self._interior_solid_sprites = pygame.sprite.Group()
@@ -86,7 +97,7 @@ class Game:
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
 
-        self._playing_mission = False
+        self._state: Game.State = Game.State.Setup
         self._ship: Ship|None = None
         self._asteroid_count = 0
         self._asteroid_create_count = 0
@@ -281,10 +292,7 @@ class Game:
 
         self._ship = None
 
-        # reset background
-        self._background.blit(self._full_space_background, (0, 0))
-        self._display_surf.blit(self._background, (0, 0))
-        self._update_rects.append(self._display_surf.get_rect())
+        self.start_setup()
 
     def _create_asteroids(self) -> None:
         flight_view_size = self._flight_view_surface.get_size()
@@ -297,11 +305,38 @@ class Game:
             y = random.randint(0, flight_view_height // 10)
             Asteroid(self, Asteroid.Size.Big, (x, y))
 
+    def start_setup(self) -> None:
+        window_width, window_height = pygame.display.get_window_size()
+
+        self._state = Game.State.Setup
+
+        text_surface = self._setup_font.render('Press any button to start', True, (240, 10, 30))
+        text = Sprite(text_surface)
+        text.rect.center = (window_width // 2, window_height // 2)
+        self._setup_menu_sprites.add(text)
+
+        # reset background
+        self._background.blit(self._setup_background, (0, 0))
+        self._display_surf.blit(self._background, (0, 0))
+        self._update_rects.append(self._display_surf.get_rect())
+
+    def _setup_menu_update(self) -> None:
+        for joystick in self._joysticks:
+            for i in range(joystick.get_numbuttons()):
+                if joystick.get_button(i):
+                    self.start_mission()
+                    return
+
     def start_mission(self) -> None:
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
-        self._playing_mission = True
+        self._state = Game.State.Mission
+
+        # reset background
+        self._background.blit(self._mission_background, (0, 0))
+        self._display_surf.blit(self._background, (0, 0))
+        self._update_rects.append(self._display_surf.get_rect())
 
         # create ship
         self._ship = Ship(self, interior_view_center)
@@ -326,10 +361,12 @@ class Game:
             self._people_sprites.add(person)
 
     def end_mission(self) -> None:
-        self._playing_mission = False
+        self._state = Game.State.PostMission
         pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
 
     def mainloop(self) -> None:
+        self.start_setup()
+
         quit_game = False
         self._work_stopwatch.start()
         while True:
@@ -378,12 +415,16 @@ class Game:
 
             self._update_stopwatch.start()
 
-            if self._playing_mission and self._ship is not None:
-                self._ship.update(self)
-            for sprite in self.interior_view_sprites:
-                sprite.update(self)
-            for sprite in self.flight_view_sprites:
-                sprite.update(self)
+            match self._state:
+                case Game.State.Setup:
+                    self._setup_menu_update()
+                case Game.State.Mission:
+                    if self._ship is not None:
+                        self._ship.update(self)
+                    for sprite in self.interior_view_sprites:
+                        sprite.update(self)
+                    for sprite in self.flight_view_sprites:
+                        sprite.update(self)
 
             self._update_stopwatch.stop()
 
@@ -396,9 +437,13 @@ class Game:
                 rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
                 self._update_rects.append(rect)
 
+            self._setup_menu_sprites.clear(self._display_surf, self._background)
             self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
             self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
             self._info_overlay_sprites.clear(self._display_surf, self._background)
+
+            rects = self._setup_menu_sprites.draw(self._display_surf)
+            self._update_rects += rects
 
             rects = self._interior_view_sprites.draw(self._interior_view_surface)
             self._update_rects += rects
@@ -410,8 +455,9 @@ class Game:
                 adjusted_rect.x += offset
                 self._update_rects.append(adjusted_rect)
 
-            self._display_surf.blit(self._divider.image, self._divider.rect)
-            self._update_rects.append(self._divider.rect)
+            if self._state != Game.State.Setup:
+                self._display_surf.blit(self._divider.image, self._divider.rect)
+                self._update_rects.append(self._divider.rect)
 
             rects = self._info_overlay_sprites.draw(self._display_surf)
             self._update_rects += rects
