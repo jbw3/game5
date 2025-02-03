@@ -511,5 +511,7 @@ class Ship:
                 self._hull -= 1
                 self._update_hull_info()
                 if self._hull <= 0:
+                    for i in range(len(self._aiming)):
+                        self.disable_aiming(i)
                     game.flight_view_sprites.remove(self._flight_sprite)
                     game.end_mission()
