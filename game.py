@@ -58,13 +58,13 @@ class SetupMenu:
                 elif axis > 0.4 and self._num_players < num_controllers:
                     self._num_players += 1
 
+            if controller.get_activate_button():
+                game.setup_menu_sprites.empty()
+                game.start_mission(self._num_players)
+
         if self._num_players != old_num_players:
             self._num_players_sprite.image = self._render_num_players_surface()
             self._num_players_sprite.dirty = 1
-
-        if controller.get_activate_button():
-            game.setup_menu_sprites.empty()
-            game.start_mission(self._num_players)
 
 class Game:
     MAX_FPS = 60.0
