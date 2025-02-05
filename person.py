@@ -3,13 +3,13 @@ import math
 import pygame
 from typing import TYPE_CHECKING, override
 
+from animation import Animation
 from controller import Controller
-from sprite import Sprite
 
 if TYPE_CHECKING:
     from game import Game
 
-class Person(Sprite):
+class Person(Animation):
     @unique
     class State(Enum):
         Moving = 0
@@ -19,7 +19,13 @@ class Person(Sprite):
     MAX_SPEED = 70.0
 
     def __init__(self, game: 'Game', center: tuple[int, int], controller: Controller):
-        super().__init__(game.image_loader.load(Person.IMAGE_NAME))
+        self._basic_images = [game.image_loader.load(Person.IMAGE_NAME)]
+        self._control_images = [
+            game.image_loader.load(f'person_control{i+1}.png')
+            for i in range(5)
+        ]
+
+        super().__init__(self._basic_images)
         self.rect.center = center
         self.dirty = 1
 
@@ -37,6 +43,8 @@ class Person(Sprite):
 
     @override
     def update(self, game: 'Game') -> None:
+        super().update(game)
+
         match self._state:
             case Person.State.Moving:
                 self._state_moving(game)
@@ -87,6 +95,9 @@ class Person(Sprite):
         if self._controller.get_activate_button():
             if game.ship.try_activate_console(self):
                 self._state = Person.State.Console
+                old_bottom = self.rect.bottom
+                self.set_images(self._control_images, period=300, loop=True)
+                self.rect.bottom = old_bottom
                 self._x = float(self.rect.centerx)
                 self._y = float(self.rect.centery)
 
@@ -97,3 +108,6 @@ class Person(Sprite):
         if self._controller.get_deactivate_button():
             game.ship.deactivate_console(self)
             self._state = Person.State.Moving
+            old_bottom = self.rect.bottom
+            self.set_images(self._basic_images)
+            self.rect.bottom = old_bottom

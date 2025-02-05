@@ -49,7 +49,7 @@ class PilotConsole(Console):
     @override
     def _move_person(self, person: Person) -> None:
         person.rect.centerx = self.rect.centerx
-        person.rect.top = self.rect.bottom + 4
+        person.rect.top = self.rect.bottom + 1
 
     @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
@@ -91,7 +91,7 @@ class WeaponConsole(Console):
     @override
     def _move_person(self, person: Person) -> None:
         person.rect.centerx = self.rect.centerx
-        person.rect.top = self.rect.bottom + 4
+        person.rect.top = self.rect.bottom + 1
 
     @override
     def activate(self, ship: 'Ship', person: Person) -> None:
