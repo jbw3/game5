@@ -2,12 +2,12 @@ from enum import Enum, unique
 import random
 from typing import TYPE_CHECKING, override
 
-from sprite import Sprite
+from sprite import FlightCollisionSprite
 
 if TYPE_CHECKING:
     from game import Game
 
-class Asteroid(Sprite):
+class Asteroid(FlightCollisionSprite):
     @unique
     class Size(Enum):
         Small = 0
@@ -41,36 +41,17 @@ class Asteroid(Sprite):
             case _:
                 assert False, f'Unknown asteroid size: {size}'
 
-        super().__init__(random.choice(images))
+        dx = 0.0
+        dy = 0.0
+        while dx == 0.0 and dy == 0.0:
+            dx = float(random.randint(-Asteroid.MAX_SPEED, Asteroid.MAX_SPEED))
+            dy = float(random.randint(-Asteroid.MAX_SPEED, Asteroid.MAX_SPEED))
+
+        super().__init__(random.choice(images), float(center[0]), float(center[1]), dx, dy)
         self.rect.center = center
 
         game.flight_view_sprites.add(self)
         game.flight_collision_sprites.add(self)
-
-        self._x = float(center[0])
-        self._y = float(center[1])
-
-        self._dx = 0.0
-        self._dy = 0.0
-        while self._dx == 0.0 and self._dy == 0.0:
-            self._dx = float(random.randint(-Asteroid.MAX_SPEED, Asteroid.MAX_SPEED))
-            self._dy = float(random.randint(-Asteroid.MAX_SPEED, Asteroid.MAX_SPEED))
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @property
-    def y(self) -> float:
-        return self._y
-
-    @property
-    def dx(self) -> float:
-        return self._dx
-
-    @property
-    def dy(self) -> float:
-        return self._dy
 
     @override
     def update(self, game: 'Game') -> None:
@@ -97,6 +78,7 @@ class Asteroid(Sprite):
             self.rect.left = flight_view_size[0]
             self._x = float(self.rect.centerx)
 
+    @override
     def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         self._dx = new_dx
         self._dy = new_dy
@@ -107,6 +89,7 @@ class Asteroid(Sprite):
             ):
             self.damage(game)
 
+    @override
     def damage(self, game: 'Game') -> None:
         game.flight_view_sprites.remove(self)
         game.flight_collision_sprites.remove(self)

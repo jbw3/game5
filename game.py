@@ -10,7 +10,7 @@ from controller import Controller
 from image_loader import ImageLoader
 from person import Person
 from ship import Ship
-from sprite import Sprite
+from sprite import FlightCollisionSprite, Sprite
 from stopwatch import Stopwatch
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
@@ -163,31 +163,31 @@ class Game:
         return self._frame_time
 
     @property
-    def setup_menu_sprites(self) -> pygame.sprite.LayeredDirty:
+    def setup_menu_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
         return self._setup_menu_sprites
 
     @property
-    def interior_view_sprites(self) -> pygame.sprite.LayeredDirty:
+    def interior_view_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
         return self._interior_view_sprites
 
     @property
-    def flight_view_sprites(self) -> pygame.sprite.Group:
+    def flight_view_sprites(self) -> 'pygame.sprite.Group[Sprite]':
         return self._flight_view_sprites
 
     @property
-    def interior_solid_sprites(self) -> pygame.sprite.Group:
+    def interior_solid_sprites(self) -> 'pygame.sprite.Group[Sprite]':
         return self._interior_solid_sprites
 
     @property
-    def flight_collision_sprites(self) -> pygame.sprite.Group:
+    def flight_collision_sprites(self) -> 'pygame.sprite.Group[FlightCollisionSprite]':
         return self._flight_collision_sprites
 
     @property
-    def info_overlay_sprites(self) -> pygame.sprite.LayeredDirty:
+    def info_overlay_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
         return self._info_overlay_sprites
 
     @property
-    def people_sprites(self) -> pygame.sprite.Group:
+    def people_sprites(self) -> 'pygame.sprite.Group[Sprite]':
         return self._people_sprites
 
     @property
