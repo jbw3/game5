@@ -83,6 +83,7 @@ class PilotConsole(Console):
 
 class WeaponConsole(Console):
     IMAGE_NAME = 'weapon_console.png'
+    ERROR_IMAGE_NAME = 'weapon_console_error.png'
 
     def __init__(self, game: 'Game', weapon_index: int):
         super().__init__(game, game.image_loader.load(WeaponConsole.IMAGE_NAME))
@@ -117,6 +118,17 @@ class WeaponConsole(Console):
             if controller.get_trigger_button():
                 ship.fire_laser(self._weapon_index)
 
+    def set_error(self, game: 'Game', is_error: bool) -> None:
+        old_rect = self.rect.copy()
+
+        if is_error:
+            self.image = game.image_loader.load(WeaponConsole.ERROR_IMAGE_NAME)
+        else:
+            self.image = game.image_loader.load(WeaponConsole.IMAGE_NAME)
+
+        self.rect = old_rect
+        self.dirty = 1
+
 class EngineConsole(Console):
     IMAGE_NAME = 'engine_console.png'
     ERROR_IMAGE_NAME = 'engine_console_error.png'
@@ -144,6 +156,23 @@ class EngineConsole(Console):
 
         self.rect = old_rect
         self.dirty = 1
+
+class WeaponGeneratorConsole(Console):
+    IMAGE_NAME = 'weapon_generator_console.png'
+
+    def __init__(self, game: 'Game'):
+        super().__init__(game, game.image_loader.load(WeaponGeneratorConsole.IMAGE_NAME))
+
+    @override
+    def _move_person(self, person: Person) -> None:
+        person.rect.centerx = self.rect.centerx
+        person.rect.top = self.rect.bottom + 1
+
+    @override
+    def activate(self, ship: 'Ship', person: Person) -> None:
+        super().activate(ship, person)
+        for i in range(ship.num_weapons):
+            ship.enable_weapon(i)
 
 class AimSprite(Sprite):
     LENGTH = 80
@@ -215,6 +244,7 @@ class Ship:
             self._dx = random.random() * 10 - 5
             self._dy = random.random() * 10 - 5
 
+        self._num_weapons = 2
         self._next_available_laser_fire = [0, 0]
         self._hull = 10
 
@@ -244,15 +274,21 @@ class Ship:
 
         # weapon aiming
         self._aiming: list[AimSprite] = []
+        self._weapon_enabled: list[bool] = []
         colors = [
             (255, 0, 0),
             (0, 240, 0),
         ]
-        for i in range(2):
+        for i in range(self._num_weapons):
             aim_sprite = AimSprite(colors[i], self._flight_sprite.rect.center)
             self._aiming.append(aim_sprite)
+            self._weapon_enabled.append(True)
 
         self._engine_enabled = True
+
+    @property
+    def num_weapons(self) -> int:
+        return self._num_weapons
 
     def _create_interior(self, interior_view_center: tuple[int, int]) -> None:
         min_floor_width = 100
@@ -372,11 +408,13 @@ class Ship:
         self._consoles.append(self._pilot_console)
 
         # weapon consoles
+        self._weapon_consoles: list[WeaponConsole] = []
         top = floor1.rect.top + 25
-        for i in range(2):
+        for i in range(self._num_weapons):
             weapon_console = WeaponConsole(self.game, i)
             weapon_console.rect.left = floor1.rect.left
             weapon_console.rect.top = top
+            self._weapon_consoles.append(weapon_console)
             self._consoles.append(weapon_console)
             top += 35
 
@@ -384,6 +422,11 @@ class Ship:
         self._engine_console.rect.centerx = floor7.rect.centerx
         self._engine_console.rect.bottom = floor7.rect.bottom
         self._consoles.append(self._engine_console)
+
+        self._weapon_generator_console = WeaponGeneratorConsole(self.game)
+        self._weapon_generator_console.rect.left = floor6.rect.left + Ship.WALL_WIDTH//2
+        self._weapon_generator_console.rect.top = floor6.rect.top + Ship.WALL_WIDTH//2
+        self._consoles.append(self._weapon_generator_console)
 
     def _create_wall(self, width: int, height: int) -> Sprite:
         surface = pygame.surface.Surface((width, height)).convert()
@@ -436,8 +479,20 @@ class Ship:
         self._pilot_console.set_error(self.game, True)
         self._engine_console.set_error(self.game, True)
 
+    def enable_weapon(self, weapon_index: int) -> None:
+        self._weapon_enabled[weapon_index] = True
+        self._weapon_consoles[weapon_index].set_error(self.game, False)
+        if self._weapon_consoles[weapon_index].person is not None:
+            self.enable_aiming(weapon_index)
+
+    def disable_weapon(self, weapon_index: int) -> None:
+        self._weapon_enabled[weapon_index] = False
+        self._weapon_consoles[weapon_index].set_error(self.game, True)
+        self.disable_aiming(weapon_index)
+
     def enable_aiming(self, weapon_index: int) -> None:
-        self.game.flight_view_sprites.add(self._aiming[weapon_index])
+        if self._weapon_enabled[weapon_index]:
+            self.game.flight_view_sprites.add(self._aiming[weapon_index])
 
     def disable_aiming(self, weapon_index: int) -> None:
         self.game.flight_view_sprites.remove(self._aiming[weapon_index])
@@ -449,11 +504,12 @@ class Ship:
         self._aiming[weapon_index].angle += Ship.AIM_ANGLE_RATE * self.game.frame_time
 
     def fire_laser(self, weapon_index: int) -> None:
-        ticks = pygame.time.get_ticks()
-        if ticks >= self._next_available_laser_fire[weapon_index]:
-            angle = self._aiming[weapon_index].angle
-            Laser(self.game, self._flight_sprite.rect.center, angle)
-            self._next_available_laser_fire[weapon_index] = ticks + Ship.LASER_DELAY
+        if self._weapon_enabled[weapon_index]:
+            ticks = pygame.time.get_ticks()
+            if ticks >= self._next_available_laser_fire[weapon_index]:
+                angle = self._aiming[weapon_index].angle
+                Laser(self.game, self._flight_sprite.rect.center, angle)
+                self._next_available_laser_fire[weapon_index] = ticks + Ship.LASER_DELAY
 
     def update(self, game: 'Game') -> None:
         for console in self._consoles:
@@ -462,7 +518,6 @@ class Ship:
         self._x += self._dx * game.frame_time
         self._y += self._dy * game.frame_time
 
-        last_rect = self._flight_sprite.rect.copy()
         self._flight_sprite.rect.center = (int(self._x), int(self._y))
 
         # wrap around if the ship goes past the top or bottom of the screen
@@ -545,6 +600,11 @@ class Ship:
             if self._engine_enabled and hit_points > 0:
                 self.disable_engine()
                 hit_points -= 1
+
+            for i in range(len(self._weapon_enabled)):
+                if self._weapon_enabled[i] and hit_points > 0:
+                    self.disable_weapon(i)
+                    hit_points -= 1
 
             self._hull = max(0, self._hull - hit_points)
             self._update_hull_info()
