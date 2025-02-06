@@ -1,4 +1,8 @@
 import argparse
+import datetime
+import logging
+import os
+import traceback
 
 import game
 
@@ -19,8 +23,18 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    g = game.Game(args.logging)
-    g.mainloop()
+    log_dir = 'logs'
+    log_filename = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.log')
+    os.makedirs(log_dir, exist_ok=True)
+    logging.basicConfig(filename=os.path.join(log_dir, log_filename), filemode='w', level=args.logging)
+
+    try:
+        g = game.Game()
+        g.mainloop()
+    except:
+        logger = logging.getLogger('main')
+        logger.error(traceback.format_exc())
+        raise
 
 if __name__ == '__main__':
     main()

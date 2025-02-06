@@ -1,7 +1,5 @@
-import datetime
 from enum import Enum, unique
 import logging
-import os
 import pygame
 from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
 import random
@@ -79,11 +77,7 @@ class Game:
         Mission = 1
         PostMission = 2
 
-    def __init__(self, logging_level: str):
-        log_dir = 'logs'
-        log_filename = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.log')
-        os.makedirs(log_dir, exist_ok=True)
-        logging.basicConfig(filename=os.path.join(log_dir, log_filename), filemode='w', level=logging_level)
+    def __init__(self):
         self._logger = logging.getLogger('Game')
 
         pygame.init()
