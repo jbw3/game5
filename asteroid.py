@@ -1,3 +1,4 @@
+from animation import Animation
 from enum import Enum, unique
 import random
 from typing import TYPE_CHECKING, override
@@ -95,6 +96,14 @@ class Asteroid(FlightCollisionSprite):
         game.flight_collision_sprites.remove(self)
 
         if self._size == Asteroid.Size.Small:
+            animation_images = [
+                game.image_loader.load(f'asteroid_debris{i+1}.png')
+                for i in range(5)
+            ]
+            animation = Animation(animation_images, 20)
+            animation.rect.center = self.rect.center
+            game.flight_view_sprites.add(animation)
+
             game.update_asteroid_count(-1)
         else:
             if self._size == Asteroid.Size.Big:
