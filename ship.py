@@ -157,11 +157,13 @@ class EngineConsole(Console):
         self.rect = old_rect
         self.dirty = 1
 
-class WeaponGeneratorConsole(Console):
-    IMAGE_NAME = 'weapon_generator_console.png'
+class WeaponSystemConsole(Console):
+    IMAGE_NAME = 'weapon_system_console.png'
+    ERROR_IMAGE_NAME = 'weapon_system_console_error.png'
 
-    def __init__(self, game: 'Game'):
-        super().__init__(game, game.image_loader.load(WeaponGeneratorConsole.IMAGE_NAME))
+    def __init__(self, game: 'Game', weapon_index: int):
+        super().__init__(game, game.image_loader.load(WeaponSystemConsole.IMAGE_NAME))
+        self._weapon_index = weapon_index
 
     @override
     def _move_person(self, person: Person) -> None:
@@ -171,8 +173,18 @@ class WeaponGeneratorConsole(Console):
     @override
     def activate(self, ship: 'Ship', person: Person) -> None:
         super().activate(ship, person)
-        for i in range(ship.num_weapons):
-            ship.enable_weapon(i)
+        ship.enable_weapon(self._weapon_index)
+
+    def set_error(self, game: 'Game', is_error: bool) -> None:
+        old_rect = self.rect.copy()
+
+        if is_error:
+            self.image = game.image_loader.load(WeaponSystemConsole.ERROR_IMAGE_NAME)
+        else:
+            self.image = game.image_loader.load(WeaponSystemConsole.IMAGE_NAME)
+
+        self.rect = old_rect
+        self.dirty = 1
 
 class AimSprite(Sprite):
     LENGTH = 80
@@ -423,10 +435,15 @@ class Ship:
         self._engine_console.rect.bottom = floor7.rect.bottom
         self._consoles.append(self._engine_console)
 
-        self._weapon_generator_console = WeaponGeneratorConsole(self.game)
-        self._weapon_generator_console.rect.left = floor6.rect.left + Ship.WALL_WIDTH//2
-        self._weapon_generator_console.rect.top = floor6.rect.top + Ship.WALL_WIDTH//2
-        self._consoles.append(self._weapon_generator_console)
+        self._weapon_system_consoles: list[WeaponSystemConsole] = []
+        left = floor6.rect.left + Ship.WALL_WIDTH//2
+        for i in range(self._num_weapons):
+            weapon_system_console = WeaponSystemConsole(self.game, i)
+            weapon_system_console.rect.left = left
+            weapon_system_console.rect.top = floor6.rect.top + Ship.WALL_WIDTH//2
+            self._weapon_system_consoles.append(weapon_system_console)
+            self._consoles.append(weapon_system_console)
+            left = weapon_system_console.rect.right
 
     def _create_wall(self, width: int, height: int) -> Sprite:
         surface = pygame.surface.Surface((width, height)).convert()
@@ -482,12 +499,14 @@ class Ship:
     def enable_weapon(self, weapon_index: int) -> None:
         self._weapon_enabled[weapon_index] = True
         self._weapon_consoles[weapon_index].set_error(self.game, False)
+        self._weapon_system_consoles[weapon_index].set_error(self.game, False)
         if self._weapon_consoles[weapon_index].person is not None:
             self.enable_aiming(weapon_index)
 
     def disable_weapon(self, weapon_index: int) -> None:
         self._weapon_enabled[weapon_index] = False
         self._weapon_consoles[weapon_index].set_error(self.game, True)
+        self._weapon_system_consoles[weapon_index].set_error(self.game, True)
         self.disable_aiming(weapon_index)
 
     def enable_aiming(self, weapon_index: int) -> None:
