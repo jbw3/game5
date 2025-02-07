@@ -149,6 +149,7 @@ class Game:
         self._ship: Ship|None = None
         self._asteroid_count = 0
         self._asteroid_create_count = 0
+        self._asteroid_inc_count = 0
 
     @property
     def resource_loader(self) -> ResourceLoader:
@@ -354,7 +355,7 @@ class Game:
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, flight_view_height = flight_view_size
 
-        self._asteroid_create_count += 1
+        self._asteroid_create_count += self._asteroid_inc_count
         self._asteroid_count = self._asteroid_create_count
         for _ in range(self._asteroid_count):
             x = random.randint(0, flight_view_width - 1)
@@ -390,6 +391,7 @@ class Game:
         self._update_rects.append(self._interior_view_surface.get_rect())
 
         self._asteroid_create_count = 0
+        self._asteroid_inc_count = num_players
         self._create_asteroids()
 
         # create people
