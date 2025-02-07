@@ -1,11 +1,11 @@
 import os
 import pygame
 
-class ImageLoader:
+class ResourceLoader:
     def __init__(self):
         self._cache: dict[str, pygame.surface.Surface] = {}
 
-    def load(self, name: str) -> pygame.surface.Surface:
+    def load_image(self, name: str) -> pygame.surface.Surface:
         image = self._cache.get(name)
         if image is None:
             filename = os.path.join('images', name)

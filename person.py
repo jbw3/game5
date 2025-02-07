@@ -19,9 +19,9 @@ class Person(Animation):
     MAX_SPEED = 70.0
 
     def __init__(self, game: 'Game', center: tuple[int, int], controller: Controller):
-        self._basic_images = [game.image_loader.load(Person.IMAGE_NAME)]
+        self._basic_images = [game.resource_loader.load_image(Person.IMAGE_NAME)]
         self._control_images = [
-            game.image_loader.load(f'person_control{i+1}.png')
+            game.resource_loader.load_image(f'person_control{i+1}.png')
             for i in range(5)
         ]
 

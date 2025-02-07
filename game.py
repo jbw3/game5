@@ -6,8 +6,8 @@ import random
 
 from asteroid import Asteroid
 from controller import Controller
-from image_loader import ImageLoader
 from person import Person
+from resource_loader import ResourceLoader
 from ship import Ship
 from sprite import FlightCollisionSprite, Sprite
 from stopwatch import Stopwatch
@@ -84,7 +84,7 @@ class Game:
         pygame.font.init()
         pygame.joystick.init()
 
-        self._image_loader = ImageLoader()
+        self._resource_loader = ResourceLoader()
 
         self._fps_clock = pygame.time.Clock()
         self._frame_time = 0.0
@@ -151,8 +151,8 @@ class Game:
         self._asteroid_create_count = 0
 
     @property
-    def image_loader(self) -> ImageLoader:
-        return self._image_loader
+    def resource_loader(self) -> ResourceLoader:
+        return self._resource_loader
 
     @property
     def frame_time(self) -> float:
@@ -301,7 +301,7 @@ class Game:
                 surface.blit(star_surface, (x, y))
 
         galaxy_images = [
-            self.image_loader.load(f'galaxy{i+1}.png')
+            self.resource_loader.load_image(f'galaxy{i+1}.png')
             for i in range(2)
         ]
         num_galaxies = random.choice([2, 3])
@@ -315,7 +315,7 @@ class Game:
             surface.blit(galaxy_surface_rotated, (x, y))
 
         nebula_part_images = [
-            self.image_loader.load(f'nebula_part{i+1}.png')
+            self.resource_loader.load_image(f'nebula_part{i+1}.png')
             for i in range(5)
         ]
         num_nebulas = 2

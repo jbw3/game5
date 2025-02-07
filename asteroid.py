@@ -19,15 +19,15 @@ class Asteroid(FlightCollisionSprite):
 
     def __init__(self, game: 'Game', size: 'Asteroid.Size', center: tuple[int, int]):
         small_images = [
-            game.image_loader.load(f'asteroid_small{i+1}.png')
+            game.resource_loader.load_image(f'asteroid_small{i+1}.png')
             for i in range(1)
         ]
         medium_images = [
-            game.image_loader.load(f'asteroid_medium{i+1}.png')
+            game.resource_loader.load_image(f'asteroid_medium{i+1}.png')
             for i in range(2)
         ]
         big_images = [
-            game.image_loader.load(f'asteroid_big{i+1}.png')
+            game.resource_loader.load_image(f'asteroid_big{i+1}.png')
             for i in range(2)
         ]
 
@@ -97,7 +97,7 @@ class Asteroid(FlightCollisionSprite):
 
         if self._size == Asteroid.Size.Small:
             animation_images = [
-                game.image_loader.load(f'asteroid_debris{i+1}.png')
+                game.resource_loader.load_image(f'asteroid_debris{i+1}.png')
                 for i in range(5)
             ]
             animation = Animation(animation_images, 20)

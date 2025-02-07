@@ -13,7 +13,7 @@ class Laser(Sprite):
     SPEED = 1000
 
     def __init__(self, game: 'Game', center: tuple[int, int], angle: float):
-        super().__init__(pygame.transform.rotate(game.image_loader.load(Laser.RED_IMAGE_NAME), angle))
+        super().__init__(pygame.transform.rotate(game.resource_loader.load_image(Laser.RED_IMAGE_NAME), angle))
         self.rect.center = center
 
         game.flight_view_sprites.add(self)

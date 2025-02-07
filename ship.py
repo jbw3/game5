@@ -44,7 +44,7 @@ class PilotConsole(Console):
     ERROR_IMAGE_NAME = 'pilot_console_error.png'
 
     def __init__(self, game: 'Game'):
-        super().__init__(game, game.image_loader.load(PilotConsole.IMAGE_NAME))
+        super().__init__(game, game.resource_loader.load_image(PilotConsole.IMAGE_NAME))
 
     @override
     def _move_person(self, person: Person) -> None:
@@ -74,9 +74,9 @@ class PilotConsole(Console):
         old_rect = self.rect.copy()
 
         if is_error:
-            self.image = game.image_loader.load(PilotConsole.ERROR_IMAGE_NAME)
+            self.image = game.resource_loader.load_image(PilotConsole.ERROR_IMAGE_NAME)
         else:
-            self.image = game.image_loader.load(PilotConsole.IMAGE_NAME)
+            self.image = game.resource_loader.load_image(PilotConsole.IMAGE_NAME)
 
         self.rect = old_rect
         self.dirty = 1
@@ -86,7 +86,7 @@ class WeaponConsole(Console):
     ERROR_IMAGE_NAME = 'weapon_console_error.png'
 
     def __init__(self, game: 'Game', weapon_index: int):
-        super().__init__(game, game.image_loader.load(WeaponConsole.IMAGE_NAME))
+        super().__init__(game, game.resource_loader.load_image(WeaponConsole.IMAGE_NAME))
         self._weapon_index = weapon_index
 
     @override
@@ -122,9 +122,9 @@ class WeaponConsole(Console):
         old_rect = self.rect.copy()
 
         if is_error:
-            self.image = game.image_loader.load(WeaponConsole.ERROR_IMAGE_NAME)
+            self.image = game.resource_loader.load_image(WeaponConsole.ERROR_IMAGE_NAME)
         else:
-            self.image = game.image_loader.load(WeaponConsole.IMAGE_NAME)
+            self.image = game.resource_loader.load_image(WeaponConsole.IMAGE_NAME)
 
         self.rect = old_rect
         self.dirty = 1
@@ -134,7 +134,7 @@ class EngineConsole(Console):
     ERROR_IMAGE_NAME = 'engine_console_error.png'
 
     def __init__(self, game: 'Game'):
-        super().__init__(game, game.image_loader.load(EngineConsole.IMAGE_NAME))
+        super().__init__(game, game.resource_loader.load_image(EngineConsole.IMAGE_NAME))
 
     @override
     def _move_person(self, person: Person) -> None:
@@ -150,9 +150,9 @@ class EngineConsole(Console):
         old_rect = self.rect.copy()
 
         if is_error:
-            self.image = game.image_loader.load(EngineConsole.ERROR_IMAGE_NAME)
+            self.image = game.resource_loader.load_image(EngineConsole.ERROR_IMAGE_NAME)
         else:
-            self.image = game.image_loader.load(EngineConsole.IMAGE_NAME)
+            self.image = game.resource_loader.load_image(EngineConsole.IMAGE_NAME)
 
         self.rect = old_rect
         self.dirty = 1
@@ -162,7 +162,7 @@ class WeaponSystemConsole(Console):
     ERROR_IMAGE_NAME = 'weapon_system_console_error.png'
 
     def __init__(self, game: 'Game', weapon_index: int):
-        super().__init__(game, game.image_loader.load(WeaponSystemConsole.IMAGE_NAME))
+        super().__init__(game, game.resource_loader.load_image(WeaponSystemConsole.IMAGE_NAME))
         self._weapon_index = weapon_index
 
     @override
@@ -179,9 +179,9 @@ class WeaponSystemConsole(Console):
         old_rect = self.rect.copy()
 
         if is_error:
-            self.image = game.image_loader.load(WeaponSystemConsole.ERROR_IMAGE_NAME)
+            self.image = game.resource_loader.load_image(WeaponSystemConsole.ERROR_IMAGE_NAME)
         else:
-            self.image = game.image_loader.load(WeaponSystemConsole.IMAGE_NAME)
+            self.image = game.resource_loader.load_image(WeaponSystemConsole.IMAGE_NAME)
 
         self.rect = old_rect
         self.dirty = 1
@@ -260,7 +260,7 @@ class Ship:
         self._next_available_laser_fire = [0, 0]
         self._hull = 10
 
-        background_image = game.image_loader.load('ship1.png')
+        background_image = game.resource_loader.load_image('ship1.png')
         self._background_sprite = Sprite(background_image)
         self._background_sprite.rect.center = interior_view_center
 
@@ -638,7 +638,7 @@ class Ship:
 
         # create explosion graphic
         explosion_images = [
-            self.game.image_loader.load(f'explosion{i+1}.png')
+            self.game.resource_loader.load_image(f'explosion{i+1}.png')
             for i in range(8)
         ]
         explosion = Animation(explosion_images, 62)
