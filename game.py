@@ -233,10 +233,10 @@ class Game:
             # Frame times
             text_strings.append(f'Frame times for past {self._stopwatch_num_frames} frames:')
             text_strings.append(self._build_timing_string('Total', 1, self._work_stopwatch.times))
-            text_strings.append(self._build_timing_string('Update', 1, self._update_stopwatch.times))
-            text_strings.append(self._build_timing_string('Draw', 1, self._draw_stopwatch.times))
-            text_strings.append(self._build_timing_string('Blit', 2, self._blit_stopwatch.times))
-            text_strings.append(self._build_timing_string('Display', 2, self._display_update_stopwatch.times))
+            text_strings.append(self._build_timing_string('Update', 2, self._update_stopwatch.times))
+            text_strings.append(self._build_timing_string('Draw', 2, self._draw_stopwatch.times))
+            text_strings.append(self._build_timing_string('Blit', 3, self._blit_stopwatch.times))
+            text_strings.append(self._build_timing_string('Display', 3, self._display_update_stopwatch.times))
 
         if self._joystick_debug:
             # Joystick info
