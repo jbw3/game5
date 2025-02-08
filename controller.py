@@ -10,16 +10,28 @@ class Controller:
 
         guid = self._joystick.get_guid()
 
+        self._axis_threshold = 0.2
         if guid == Controller.NINTENDO_SWITCH_PRO_GUID:
             self._trigger_button_num = 10
         else:
             self._trigger_button_num = 5
 
+    def _get_adjusted_axis(self, value: float) -> float:
+        abs_value = abs(value)
+        if abs_value > self._axis_threshold:
+            adjusted_value = (abs_value - self._axis_threshold) / (1.0 - self._axis_threshold)
+            if value < 0.0:
+                adjusted_value = -adjusted_value
+        else:
+            adjusted_value = 0.0
+
+        return adjusted_value
+
     def get_move_x_axis(self) -> float:
-        return self._joystick.get_axis(0)
+        return self._get_adjusted_axis(self._joystick.get_axis(0))
 
     def get_move_y_axis(self) -> float:
-        return self._joystick.get_axis(1)
+        return self._get_adjusted_axis(self._joystick.get_axis(1))
 
     def get_activate_button(self) -> bool:
         return self._joystick.get_button(0)

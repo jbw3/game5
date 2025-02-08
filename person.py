@@ -56,17 +56,8 @@ class Person(Animation):
     def _state_moving(self, game: 'Game') -> None:
         last_rect = self.rect.copy()
 
-        a0 = self._controller.get_move_x_axis()
-        if abs(a0) > 0.2:
-            x_axis = a0
-        else:
-            x_axis = 0.0
-
-        a1 = self._controller.get_move_y_axis()
-        if abs(a1) > 0.2:
-            y_axis = a1
-        else:
-            y_axis = 0.0
+        x_axis = self._controller.get_move_x_axis()
+        y_axis = self._controller.get_move_y_axis()
 
         angle = math.atan2(y_axis, x_axis)
         magnitude = min(1.0, math.sqrt(x_axis**2 + y_axis**2))

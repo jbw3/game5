@@ -56,17 +56,8 @@ class PilotConsole(Console):
         if self._person is not None:
             controller = self._person.controller
 
-            a0 = controller.get_move_x_axis()
-            if a0 < -0.2 or a0 > 0.2:
-                x_accel = a0 * Ship.MAX_ACCELERATION
-            else:
-                x_accel = 0.0
-
-            a1 = controller.get_move_y_axis()
-            if a1 < -0.2 or a1 > 0.2:
-                y_accel = a1 * Ship.MAX_ACCELERATION
-            else:
-                y_accel = 0.0
+            x_accel = controller.get_move_x_axis() * Ship.MAX_ACCELERATION
+            y_accel = controller.get_move_y_axis() * Ship.MAX_ACCELERATION
 
             ship.accelerate(x_accel, y_accel)
 
@@ -110,9 +101,9 @@ class WeaponConsole(Console):
             controller = self._person.controller
 
             a0 = controller.get_move_x_axis()
-            if a0 < -0.2:
+            if a0 < 0.0:
                 ship.rotate_aim_counterclockwise(self._weapon_index)
-            elif a0 > 0.2:
+            elif a0 > 0.0:
                 ship.rotate_aim_clockwise(self._weapon_index)
 
             if controller.get_trigger_button():

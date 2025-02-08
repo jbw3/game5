@@ -48,13 +48,13 @@ class SetupMenu:
 
             controller = game.controllers[0]
             axis = controller.get_move_x_axis()
-            if abs(axis) <= 0.4:
+            if abs(axis) < 0.001:
                 self._axis_was_centered = True
             elif self._axis_was_centered:
                 self._axis_was_centered = False
-                if axis < -0.4 and self._num_players > 1:
+                if axis < 0.0 and self._num_players > 1:
                     self._num_players -= 1
-                elif axis > 0.4 and self._num_players < num_controllers:
+                elif axis > 0.0 and self._num_players < num_controllers:
                     self._num_players += 1
 
             if controller.get_activate_button():
