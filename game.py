@@ -1,7 +1,7 @@
 from enum import Enum, unique
 import logging
 import pygame
-from pygame.locals import JOYDEVICEADDED, JOYDEVICEREMOVED, KEYDOWN, KEYUP, QUIT
+import pygame.locals
 import random
 
 from asteroid import Asteroid
@@ -410,27 +410,25 @@ class Game:
         self._state = Game.State.PostMission
         pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
 
-    def mainloop(self) -> None:
-        self.start_setup()
-
+    def _process_events(self) -> bool:
         quit_game = False
-        self._work_stopwatch.start()
-        while True:
-            self._logger.debug(f'Ticks: {pygame.time.get_ticks()}')
-
-            for event in pygame.event.get():
-                if event.type == QUIT:
+        for event in pygame.event.get():
+            match event.type:
+                case pygame.locals.QUIT:
                     pygame.quit()
                     quit_game = True
-                elif event.type == KEYDOWN:
+
+                case pygame.locals.KEYDOWN:
                     if event.key == pygame.K_F1 and pygame.K_F1 not in self._pressed_keys:
                         self._timing_debug = not self._timing_debug
                     elif event.key == pygame.K_F2 and pygame.K_F2 not in self._pressed_keys:
                         self._joystick_debug = not self._joystick_debug
                     self._pressed_keys.add(event.key)
-                elif event.type == KEYUP:
+
+                case pygame.locals.KEYUP:
                     self._pressed_keys.remove(event.key)
-                elif event.type == JOYDEVICEADDED:
+
+                case pygame.locals.JOYDEVICEADDED:
                     joystick = pygame.joystick.Joystick(event.device_index)
                     self._joysticks.append(joystick)
                     self._controllers.append(Controller(joystick))
@@ -438,7 +436,8 @@ class Game:
                     guid = joystick.get_guid()
                     name = joystick.get_name()
                     self._logger.info(f'Joystick added: {joystick_id}, {guid}, {name}')
-                elif event.type == JOYDEVICEREMOVED:
+
+                case pygame.locals.JOYDEVICEREMOVED:
                     idx = event.instance_id
                     for joystick in self._joysticks:
                         if joystick.get_id() == idx:
@@ -449,83 +448,96 @@ class Game:
                             name = joystick.get_name()
                             self._logger.info(f'Joystick removed: {joystick_id}, {guid}, {name}')
                             break
-                elif event.type == Game.RESET_GAME_EVENT:
+
+                case Game.RESET_GAME_EVENT:
                     self._reset_game()
 
+        return quit_game
+
+    def _update_sprites(self) -> None:
+        self._update_stopwatch.start()
+
+        match self._state:
+            case Game.State.Setup:
+                self._setup_menu.update(self)
+            case Game.State.Mission:
+                if self._ship is not None:
+                    self._ship.update(self)
+                for sprite in self.interior_view_sprites:
+                    sprite.update(self)
+                for sprite in self.flight_view_sprites:
+                    sprite.update(self)
+            case Game.State.PostMission:
+                for sprite in self.flight_view_sprites:
+                    sprite.update(self)
+
+        self._update_stopwatch.stop()
+
+    def _draw_sprites(self) -> None:
+        self._draw_stopwatch.start()
+        self._blit_stopwatch.start()
+
+        if self._debug_rect.width > 0 and self._debug_rect.height > 0:
+            rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
+            self._update_rects.append(rect)
+
+        self._setup_menu_sprites.clear(self._display_surf, self._background)
+        self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
+        self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
+        self._info_overlay_sprites.clear(self._display_surf, self._background)
+
+        rects = self._setup_menu_sprites.draw(self._display_surf)
+        self._update_rects += rects
+
+        rects = self._interior_view_sprites.draw(self._interior_view_surface)
+        self._update_rects += rects
+
+        rects = self._flight_view_sprites.draw(self._flight_view_surface)
+        offset = self._display_surf.get_rect().width // 2
+        for rect in rects:
+            adjusted_rect = rect.copy()
+            adjusted_rect.x += offset
+            self._update_rects.append(adjusted_rect)
+
+        if self._state != Game.State.Setup:
+            self._display_surf.blit(self._divider.image, self._divider.rect)
+            self._update_rects.append(self._divider.rect)
+
+        rects = self._info_overlay_sprites.draw(self._display_surf)
+        self._update_rects += rects
+
+        if self._timing_debug or self._joystick_debug:
+            self._display_debug()
+        else:
+            self._debug_rect.size = (0, 0)
+
+        self._blit_stopwatch.stop()
+
+        update_rects_str = ', '.join(f'({r.x}, {r.y})' for r in self._update_rects)
+        self._logger.debug(f'Update rects: {update_rects_str}')
+
+        self._display_update_stopwatch.start()
+
+        pygame.display.update(self._update_rects)
+        self._update_rects.clear()
+
+        self._display_update_stopwatch.stop()
+        self._draw_stopwatch.stop()
+
+    def mainloop(self) -> None:
+        self.start_setup()
+
+        self._work_stopwatch.start()
+        while True:
+            self._logger.debug(f'Ticks: {pygame.time.get_ticks()}')
+
+            quit_game = self._process_events()
             if quit_game:
                 break
 
-            # Update sprites
+            self._update_sprites()
+            self._draw_sprites()
 
-            self._update_stopwatch.start()
-
-            match self._state:
-                case Game.State.Setup:
-                    self._setup_menu.update(self)
-                case Game.State.Mission:
-                    if self._ship is not None:
-                        self._ship.update(self)
-                    for sprite in self.interior_view_sprites:
-                        sprite.update(self)
-                    for sprite in self.flight_view_sprites:
-                        sprite.update(self)
-                case Game.State.PostMission:
-                    for sprite in self.flight_view_sprites:
-                        sprite.update(self)
-
-            self._update_stopwatch.stop()
-
-            # Draw sprites
-
-            self._draw_stopwatch.start()
-            self._blit_stopwatch.start()
-
-            if self._debug_rect.width > 0 and self._debug_rect.height > 0:
-                rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
-                self._update_rects.append(rect)
-
-            self._setup_menu_sprites.clear(self._display_surf, self._background)
-            self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
-            self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
-            self._info_overlay_sprites.clear(self._display_surf, self._background)
-
-            rects = self._setup_menu_sprites.draw(self._display_surf)
-            self._update_rects += rects
-
-            rects = self._interior_view_sprites.draw(self._interior_view_surface)
-            self._update_rects += rects
-
-            rects = self._flight_view_sprites.draw(self._flight_view_surface)
-            offset = self._display_surf.get_rect().width // 2
-            for rect in rects:
-                adjusted_rect = rect.copy()
-                adjusted_rect.x += offset
-                self._update_rects.append(adjusted_rect)
-
-            if self._state != Game.State.Setup:
-                self._display_surf.blit(self._divider.image, self._divider.rect)
-                self._update_rects.append(self._divider.rect)
-
-            rects = self._info_overlay_sprites.draw(self._display_surf)
-            self._update_rects += rects
-
-            if self._timing_debug or self._joystick_debug:
-                self._display_debug()
-            else:
-                self._debug_rect.size = (0, 0)
-
-            self._blit_stopwatch.stop()
-
-            update_rects_str = ', '.join(f'({r.x}, {r.y})' for r in self._update_rects)
-            self._logger.debug(f'Update rects: {update_rects_str}')
-
-            self._display_update_stopwatch.start()
-
-            pygame.display.update(self._update_rects)
-            self._update_rects.clear()
-
-            self._display_update_stopwatch.stop()
-            self._draw_stopwatch.stop()
             self._work_stopwatch.stop()
 
             frame_time_ms = self._fps_clock.tick(Game.MAX_FPS)
