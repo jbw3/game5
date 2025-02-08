@@ -20,8 +20,8 @@ class SetupMenu:
     def __init__(self):
         self._font = pygame.font.SysFont('Courier', 60)
         self._num_players = 1
-        self._axis_was_centered = True
-        self._button_was_released = True
+        self._axis_was_centered = False
+        self._button_was_released = False
 
     def _render_num_players_surface(self) -> pygame.surface.Surface:
         text_surface = self._font.render(f'Players: < {self._num_players} >', True, SetupMenu.TextColor)
@@ -31,6 +31,8 @@ class SetupMenu:
         window_width, window_height = pygame.display.get_window_size()
 
         self._num_players = min(self._num_players, len(game.controllers))
+        self._axis_was_centered = False
+        self._button_was_released = False
 
         self._num_players_sprite = Sprite(self._render_num_players_surface())
         self._num_players_sprite.rect.center = (window_width // 2, window_height // 2 - 30)
@@ -57,9 +59,14 @@ class SetupMenu:
                 elif axis > 0.0 and self._num_players < num_controllers:
                     self._num_players += 1
 
-            if controller.get_activate_button():
-                game.menu_sprites.empty()
-                game.start_mission(self._num_players)
+            activate_button = controller.get_activate_button()
+            if not self._button_was_released:
+                if not activate_button:
+                    self._button_was_released = True
+            else:
+                if activate_button:
+                    game.menu_sprites.empty()
+                    game.start_mission(self._num_players)
 
         if self._num_players != old_num_players:
             self._num_players_sprite.image = self._render_num_players_surface()
@@ -75,21 +82,57 @@ class PauseMenu:
         UnpausePress = 2
 
     def __init__(self):
-        self._font = pygame.font.SysFont('Courier', 80)
-        self._paused_text = Sprite(self._font.render('Paused', True, PauseMenu.TextColor))
+        self._paused_font = pygame.font.SysFont('Courier', 90)
+        self._option_font = pygame.font.SysFont('Courier', 60)
+
+        self._option_index = 0
+        self._options_text = [
+            'Resume',
+            'Quit',
+        ]
+        self._options_sprites: list[Sprite] = []
+
         window_width, window_height = pygame.display.get_window_size()
-        self._paused_text.rect.center = (window_width // 2, window_height // 2 - 30)
+
+        self._paused_sprite = Sprite(self._paused_font.render('Paused', True, PauseMenu.TextColor))
+        self._paused_sprite.rect.center = (window_width // 2, window_height // 2 - 100)
+
+        top = self._paused_sprite.rect.bottom + 30
+        for text in self._options_text:
+            sprite = Sprite(self._option_font.render(text, True, PauseMenu.TextColor))
+            sprite.rect.centerx = window_width // 2
+            sprite.rect.top = top
+            self._options_sprites.append(sprite)
+            top = sprite.rect.bottom
+
+        self._update_options()
 
         self._controller: Controller|None = None
         self._state = PauseMenu.State.PausePress
 
+    def _update_options(self) -> None:
+        for i, sprite in enumerate(self._options_sprites):
+            old_center = sprite.rect.center
+            text = self._options_text[i]
+            if self._option_index == i:
+                text = f'< {text} >'
+            sprite.image = self._option_font.render(text, True, PauseMenu.TextColor)
+            sprite.rect.center = old_center
+            sprite.dirty = 1
+
     def enable(self, game: 'Game', controller: Controller) -> None:
         self._controller = controller
-        game.menu_sprites.add(self._paused_text)
         self._state = PauseMenu.State.PausePress
+        self._option_index = 0
+        self._update_options()
+
+        game.menu_sprites.add(self._paused_sprite)
+        for sprite in self._options_sprites:
+            game.menu_sprites.add(sprite)
 
     def update(self, game: 'Game') -> None:
         if self._controller is not None:
+            # check pause button
             pressed = self._controller.get_pause_button()
             match self._state:
                 case PauseMenu.State.PausePress:
@@ -101,6 +144,26 @@ class PauseMenu:
                 case PauseMenu.State.UnpausePress:
                     if not pressed:
                         game.unpause()
+
+            # check if selected option is changing
+            axis = self._controller.get_move_y_axis()
+            if abs(axis) < 0.001:
+                self._axis_was_centered = True
+            elif self._axis_was_centered:
+                self._axis_was_centered = False
+                if axis < 0.0 and self._option_index > 0:
+                    self._option_index -= 1
+                elif axis > 0.0 and self._option_index < len(self._options_sprites) - 1:
+                    self._option_index += 1
+                self._update_options()
+
+            # check if an option is being accepted
+            if self._controller.get_activate_button():
+                match self._option_index:
+                    case 0:
+                        game.unpause()
+                    case 1:
+                        game.end_mission(delay=False)
 
 class Game:
     MAX_FPS = 60.0
@@ -172,7 +235,6 @@ class Game:
 
         self._pressed_keys: set[int] = set()
         self._paused = False
-        self._pause_pressed = False
 
         self._timing_debug = False
         self._joystick_debug = False
@@ -394,12 +456,14 @@ class Game:
         return surface
 
     def _reset_game(self) -> None:
+        self._menu_sprites.empty()
         self._interior_view_sprites.empty()
         self._flight_view_sprites.empty()
         self._interior_solid_sprites.empty()
         self._flight_collision_sprites.empty()
         self._info_overlay_sprites.empty()
 
+        self._paused = False
         self._ship = None
 
         self.start_setup()
@@ -459,9 +523,12 @@ class Game:
             person = Person(self, (x, y), controller)
             self._people_sprites.add(person)
 
-    def end_mission(self) -> None:
+    def end_mission(self, delay: bool) -> None:
         self._state = Game.State.PostMission
-        pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
+        if delay:
+            pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
+        else:
+            self._reset_game()
 
     def _process_events(self) -> bool:
         quit_game = False
@@ -542,13 +609,10 @@ class Game:
             rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
             self._update_rects.append(rect)
 
-        self._menu_sprites.clear(self._display_surf, self._background)
         self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
         self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
         self._info_overlay_sprites.clear(self._display_surf, self._background)
-
-        rects = self._menu_sprites.draw(self._display_surf)
-        self._update_rects += rects
+        self._menu_sprites.clear(self._display_surf, self._background)
 
         rects = self._interior_view_sprites.draw(self._interior_view_surface)
         self._update_rects += rects
@@ -565,6 +629,9 @@ class Game:
             self._update_rects.append(self._divider.rect)
 
         rects = self._info_overlay_sprites.draw(self._display_surf)
+        self._update_rects += rects
+
+        rects = self._menu_sprites.draw(self._display_surf)
         self._update_rects += rects
 
         if self._timing_debug or self._joystick_debug:

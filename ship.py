@@ -636,4 +636,4 @@ class Ship:
         explosion.rect.center = self._flight_sprite.rect.center
         self.game.flight_view_sprites.add(explosion)
 
-        self.game.end_mission()
+        self.game.end_mission(delay=True)
