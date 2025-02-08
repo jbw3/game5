@@ -34,7 +34,7 @@ class SetupMenu:
 
         self._num_players_sprite = Sprite(self._render_num_players_surface())
         self._num_players_sprite.rect.center = (window_width // 2, window_height // 2 - 30)
-        game.setup_menu_sprites.add(self._num_players_sprite)
+        game.menu_sprites.add(self._num_players_sprite)
 
     def update(self, game: 'Game') -> None:
         old_num_players = self._num_players
@@ -58,12 +58,49 @@ class SetupMenu:
                     self._num_players += 1
 
             if controller.get_activate_button():
-                game.setup_menu_sprites.empty()
+                game.menu_sprites.empty()
                 game.start_mission(self._num_players)
 
         if self._num_players != old_num_players:
             self._num_players_sprite.image = self._render_num_players_surface()
             self._num_players_sprite.dirty = 1
+
+class PauseMenu:
+    TextColor = (240, 11, 32)
+
+    @unique
+    class State(Enum):
+        PausePress = 0
+        PauseRelease = 1
+        UnpausePress = 2
+
+    def __init__(self):
+        self._font = pygame.font.SysFont('Courier', 80)
+        self._paused_text = Sprite(self._font.render('Paused', True, PauseMenu.TextColor))
+        window_width, window_height = pygame.display.get_window_size()
+        self._paused_text.rect.center = (window_width // 2, window_height // 2 - 30)
+
+        self._controller: Controller|None = None
+        self._state = PauseMenu.State.PausePress
+
+    def enable(self, game: 'Game', controller: Controller) -> None:
+        self._controller = controller
+        game.menu_sprites.add(self._paused_text)
+        self._state = PauseMenu.State.PausePress
+
+    def update(self, game: 'Game') -> None:
+        if self._controller is not None:
+            pressed = self._controller.get_pause_button()
+            match self._state:
+                case PauseMenu.State.PausePress:
+                    if not pressed:
+                        self._state = PauseMenu.State.PauseRelease
+                case PauseMenu.State.PauseRelease:
+                    if pressed:
+                        self._state = PauseMenu.State.UnpausePress
+                case PauseMenu.State.UnpausePress:
+                    if not pressed:
+                        game.unpause()
 
 class Game:
     MAX_FPS = 60.0
@@ -105,6 +142,7 @@ class Game:
         self._logger.info(f'Display size: {display_width}, {display_height}')
 
         self._setup_menu = SetupMenu()
+        self._pause_menu = PauseMenu()
 
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
         self._flight_view_surface = self._display_surf.subsurface((display_width//2, 0), (display_width//2, display_height))
@@ -133,13 +171,15 @@ class Game:
         self._update_rects.append(self._display_surf.get_rect())
 
         self._pressed_keys: set[int] = set()
+        self._paused = False
+        self._pause_pressed = False
 
         self._timing_debug = False
         self._joystick_debug = False
         self._debug_font = pygame.font.SysFont('Courier', 20)
         self._debug_rect = pygame.rect.Rect(0, 0, 0, 0)
 
-        self._setup_menu_sprites = pygame.sprite.LayeredDirty()
+        self._menu_sprites = pygame.sprite.LayeredDirty()
         self._interior_view_sprites = pygame.sprite.LayeredDirty()
         self._flight_view_sprites = pygame.sprite.RenderUpdates()
         self._interior_solid_sprites = pygame.sprite.Group()
@@ -165,8 +205,8 @@ class Game:
         return self._frame_time
 
     @property
-    def setup_menu_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
-        return self._setup_menu_sprites
+    def menu_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
+        return self._menu_sprites
 
     @property
     def interior_view_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
@@ -208,6 +248,14 @@ class Game:
     def ship(self) -> Ship:
         assert self._ship is not None, 'ship is None'
         return self._ship
+
+    def pause(self, controller: Controller) -> None:
+        self._paused = True
+        self._pause_menu.enable(self, controller)
+
+    def unpause(self) -> None:
+        self._paused = False
+        self._menu_sprites.empty()
 
     def update_asteroid_count(self, change: int) -> None:
         self._asteroid_count += change
@@ -466,12 +514,20 @@ class Game:
             case Game.State.Setup:
                 self._setup_menu.update(self)
             case Game.State.Mission:
-                if self._ship is not None:
-                    self._ship.update(self)
-                for sprite in self.interior_view_sprites:
-                    sprite.update(self)
-                for sprite in self.flight_view_sprites:
-                    sprite.update(self)
+                if self._paused:
+                    self._pause_menu.update(self)
+                else:
+                    if self._ship is not None:
+                        self._ship.update(self)
+                    for sprite in self.interior_view_sprites:
+                        sprite.update(self)
+                    for sprite in self.flight_view_sprites:
+                        sprite.update(self)
+
+                    for controller in self.controllers:
+                        if controller.get_pause_button():
+                            self.pause(controller)
+                            break
             case Game.State.PostMission:
                 for sprite in self.flight_view_sprites:
                     sprite.update(self)
@@ -486,12 +542,12 @@ class Game:
             rect = self._display_surf.blit(self._background, (0, 0), self._debug_rect)
             self._update_rects.append(rect)
 
-        self._setup_menu_sprites.clear(self._display_surf, self._background)
+        self._menu_sprites.clear(self._display_surf, self._background)
         self._interior_view_sprites.clear(self._interior_view_surface, self._interior_view_background)
         self._flight_view_sprites.clear(self._flight_view_surface, self._flight_view_background)
         self._info_overlay_sprites.clear(self._display_surf, self._background)
 
-        rects = self._setup_menu_sprites.draw(self._display_surf)
+        rects = self._menu_sprites.draw(self._display_surf)
         self._update_rects += rects
 
         rects = self._interior_view_sprites.draw(self._interior_view_surface)
