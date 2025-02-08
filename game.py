@@ -70,7 +70,6 @@ class SetupMenu:
 
         if self._num_players != old_num_players:
             self._num_players_sprite.image = self._render_num_players_surface()
-            self._num_players_sprite.dirty = 1
 
 class PauseMenu:
     TextColor = (240, 11, 32)
@@ -105,10 +104,9 @@ class PauseMenu:
             self._options_sprites.append(sprite)
             top = sprite.rect.bottom
 
-        self._update_options()
-
         self._controller: Controller|None = None
         self._state = PauseMenu.State.PausePress
+        self._axis_was_centered = False
 
     def _update_options(self) -> None:
         for i, sprite in enumerate(self._options_sprites):
@@ -118,17 +116,18 @@ class PauseMenu:
                 text = f'< {text} >'
             sprite.image = self._option_font.render(text, True, PauseMenu.TextColor)
             sprite.rect.center = old_center
-            sprite.dirty = 1
 
     def enable(self, game: 'Game', controller: Controller) -> None:
         self._controller = controller
         self._state = PauseMenu.State.PausePress
+        self._axis_was_centered = False
         self._option_index = 0
-        self._update_options()
 
         game.menu_sprites.add(self._paused_sprite)
         for sprite in self._options_sprites:
             game.menu_sprites.add(sprite)
+
+        self._update_options()
 
     def update(self, game: 'Game') -> None:
         if self._controller is not None:
@@ -241,7 +240,7 @@ class Game:
         self._debug_font = pygame.font.SysFont('Courier', 20)
         self._debug_rect = pygame.rect.Rect(0, 0, 0, 0)
 
-        self._menu_sprites = pygame.sprite.LayeredDirty()
+        self._menu_sprites = pygame.sprite.RenderUpdates()
         self._interior_view_sprites = pygame.sprite.LayeredDirty()
         self._flight_view_sprites = pygame.sprite.RenderUpdates()
         self._interior_solid_sprites = pygame.sprite.Group()
@@ -267,7 +266,7 @@ class Game:
         return self._frame_time
 
     @property
-    def menu_sprites(self) -> 'pygame.sprite.LayeredDirty[Sprite]':
+    def menu_sprites(self) -> 'pygame.sprite.RenderUpdates[Sprite]':
         return self._menu_sprites
 
     @property
@@ -275,7 +274,7 @@ class Game:
         return self._interior_view_sprites
 
     @property
-    def flight_view_sprites(self) -> 'pygame.sprite.Group[Sprite]':
+    def flight_view_sprites(self) -> 'pygame.sprite.RenderUpdates[Sprite]':
         return self._flight_view_sprites
 
     @property
