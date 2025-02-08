@@ -100,10 +100,12 @@ class Game:
         self._display_update_stopwatch = Stopwatch(self._stopwatch_num_frames)
 
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
+        display_width, display_height = self._display_surf.get_size()
+
+        self._logger.info(f'Display size: {display_width}, {display_height}')
 
         self._setup_menu = SetupMenu()
 
-        display_width, display_height = self._display_surf.get_size()
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
         self._flight_view_surface = self._display_surf.subsurface((display_width//2, 0), (display_width//2, display_height))
 
