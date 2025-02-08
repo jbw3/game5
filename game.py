@@ -84,6 +84,9 @@ class Game:
         pygame.font.init()
         pygame.joystick.init()
 
+        # hide the cursor
+        pygame.mouse.set_visible(False)
+
         self._resource_loader = ResourceLoader()
 
         self._fps_clock = pygame.time.Clock()
