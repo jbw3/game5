@@ -623,7 +623,6 @@ class Game:
         for event in pygame.event.get():
             match event.type:
                 case pygame.locals.QUIT:
-                    pygame.quit()
                     quit_game = True
 
                 case pygame.locals.KEYDOWN:
@@ -760,3 +759,5 @@ class Game:
             self._frame_time = frame_time_ms / 1000
 
             self._work_stopwatch.start()
+
+        pygame.quit()
