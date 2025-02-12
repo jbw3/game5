@@ -71,8 +71,62 @@ class SetupMenu:
         if self._num_players != old_num_players:
             self._num_players_sprite.image = self._render_num_players_surface()
 
+class OptionsMenu:
+    def __init__(self, options: list[str], font: pygame.font.Font, color: pygame.color.Color, x: int, top: int):
+        self._options_text = options[:]
+        self._font = font
+        self._color = color
+
+        self._option_index = 0
+        self._options_sprites: list[Sprite] = []
+        self._axis_was_centered = False
+
+        for text in self._options_text:
+            sprite = Sprite(self._font.render(text, True, self._color))
+            sprite.rect.centerx = x
+            sprite.rect.top = top
+            self._options_sprites.append(sprite)
+            top = sprite.rect.bottom
+
+    @property
+    def option_index(self) -> int:
+        return self._option_index
+
+    def _update_options(self) -> None:
+        for i, sprite in enumerate(self._options_sprites):
+            old_center = sprite.rect.center
+            text = self._options_text[i]
+            if self._option_index == i:
+                text = f'< {text} >'
+            sprite.image = self._font.render(text, True, self._color)
+            sprite.rect.center = old_center
+
+    def show(self, game: 'Game', controller: Controller) -> None:
+        self._controller = controller
+        self._axis_was_centered = False
+        self._option_index = 0
+
+        for sprite in self._options_sprites:
+            game.menu_sprites.add(sprite)
+
+        self._update_options()
+
+    def update(self, game: 'Game') -> None:
+        if self._controller is not None:
+            # check if selected option is changing
+            axis = self._controller.get_move_y_axis()
+            if abs(axis) < 0.001:
+                self._axis_was_centered = True
+            elif self._axis_was_centered:
+                self._axis_was_centered = False
+                if axis < 0.0 and self._option_index > 0:
+                    self._option_index -= 1
+                elif axis > 0.0 and self._option_index < len(self._options_sprites) - 1:
+                    self._option_index += 1
+                self._update_options()
+
 class PauseMenu:
-    TextColor = (240, 11, 32)
+    TextColor = pygame.color.Color(240, 11, 32)
 
     @unique
     class State(Enum):
@@ -81,55 +135,32 @@ class PauseMenu:
         UnpausePress = 2
 
     def __init__(self):
-        self._paused_font = pygame.font.SysFont('Courier', 90)
-        self._option_font = pygame.font.SysFont('Courier', 60)
-
-        self._option_index = 0
-        self._options_text = [
-            'Resume',
-            'Quit',
-        ]
-        self._options_sprites: list[Sprite] = []
-
         window_width, window_height = pygame.display.get_window_size()
-
+        self._paused_font = pygame.font.SysFont('Courier', 90)
         self._paused_sprite = Sprite(self._paused_font.render('Paused', True, PauseMenu.TextColor))
         self._paused_sprite.rect.center = (window_width // 2, window_height // 2 - 100)
 
-        top = self._paused_sprite.rect.bottom + 30
-        for text in self._options_text:
-            sprite = Sprite(self._option_font.render(text, True, PauseMenu.TextColor))
-            sprite.rect.centerx = window_width // 2
-            sprite.rect.top = top
-            self._options_sprites.append(sprite)
-            top = sprite.rect.bottom
+        option_font = pygame.font.SysFont('Courier', 60)
+        options = [
+            'Resume',
+            'Quit',
+        ]
+        self._options_menu = OptionsMenu(options, option_font, PauseMenu.TextColor, window_width // 2, self._paused_sprite.rect.bottom + 30)
 
         self._controller: Controller|None = None
         self._state = PauseMenu.State.PausePress
         self._axis_was_centered = False
 
-    def _update_options(self) -> None:
-        for i, sprite in enumerate(self._options_sprites):
-            old_center = sprite.rect.center
-            text = self._options_text[i]
-            if self._option_index == i:
-                text = f'< {text} >'
-            sprite.image = self._option_font.render(text, True, PauseMenu.TextColor)
-            sprite.rect.center = old_center
-
     def enable(self, game: 'Game', controller: Controller) -> None:
         self._controller = controller
         self._state = PauseMenu.State.PausePress
-        self._axis_was_centered = False
-        self._option_index = 0
 
         game.menu_sprites.add(self._paused_sprite)
-        for sprite in self._options_sprites:
-            game.menu_sprites.add(sprite)
-
-        self._update_options()
+        self._options_menu.show(game, controller)
 
     def update(self, game: 'Game') -> None:
+        self._options_menu.update(game)
+
         if self._controller is not None:
             # check pause button
             pressed = self._controller.get_pause_button()
@@ -144,21 +175,9 @@ class PauseMenu:
                     if not pressed:
                         game.unpause()
 
-            # check if selected option is changing
-            axis = self._controller.get_move_y_axis()
-            if abs(axis) < 0.001:
-                self._axis_was_centered = True
-            elif self._axis_was_centered:
-                self._axis_was_centered = False
-                if axis < 0.0 and self._option_index > 0:
-                    self._option_index -= 1
-                elif axis > 0.0 and self._option_index < len(self._options_sprites) - 1:
-                    self._option_index += 1
-                self._update_options()
-
             # check if an option is being accepted
             if self._controller.get_activate_button():
-                match self._option_index:
+                match self._options_menu.option_index:
                     case 0:
                         game.unpause()
                     case 1:
