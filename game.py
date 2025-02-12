@@ -23,6 +23,7 @@ class OptionsMenu:
         self._option_index = 0
         self._options_sprites: list[Sprite] = []
         self._axis_was_centered = False
+        self._controller: Controller|None = None
 
         for text in self._options_text:
             sprite = Sprite(self._font.render(text, True, self._color))
@@ -35,6 +36,14 @@ class OptionsMenu:
     def option_index(self) -> int:
         return self._option_index
 
+    @property
+    def controller(self) -> Controller|None:
+        return self._controller
+
+    @controller.setter
+    def controller(self, new_controller: Controller|None) -> None:
+        self._controller = new_controller
+
     def _update_options(self) -> None:
         for i, sprite in enumerate(self._options_sprites):
             old_center = sprite.rect.center
@@ -44,8 +53,7 @@ class OptionsMenu:
             sprite.image = self._font.render(text, True, self._color)
             sprite.rect.center = old_center
 
-    def show(self, game: 'Game', controller: Controller) -> None:
-        self._controller = controller
+    def show(self, game: 'Game') -> None:
         self._axis_was_centered = False
         self._option_index = 0
 
@@ -53,6 +61,10 @@ class OptionsMenu:
             game.menu_sprites.add(sprite)
 
         self._update_options()
+
+    def hide(self, game: 'Game') -> None:
+        for sprite in self._options_sprites:
+            game.menu_sprites.remove(sprite)
 
     def update(self, game: 'Game') -> None:
         if self._controller is not None:
@@ -69,7 +81,12 @@ class OptionsMenu:
                 self._update_options()
 
 class SetupMenu:
-    TextColor = (240, 11, 32)
+    TextColor = pygame.color.Color(240, 11, 32)
+
+    @unique
+    class State(Enum):
+        Start = 0
+        Setup = 1
 
     def __init__(self):
         self._font = pygame.font.SysFont('Courier', 60)
@@ -77,22 +94,58 @@ class SetupMenu:
         self._axis_was_centered = False
         self._button_was_released = False
 
+        window_width, window_height = pygame.display.get_window_size()
+        options = [
+            'Start',
+            'Quit',
+        ]
+        self._start_options = OptionsMenu(options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
+
+        self._num_players_sprite = Sprite(self._render_num_players_surface())
+        self._num_players_sprite.rect.center = (window_width // 2, window_height // 2 - 30)
+
+        self._state = SetupMenu.State.Start
+
     def _render_num_players_surface(self) -> pygame.surface.Surface:
         text_surface = self._font.render(f'Players: < {self._num_players} >', True, SetupMenu.TextColor)
         return text_surface
 
     def start(self, game: 'Game') -> None:
-        window_width, window_height = pygame.display.get_window_size()
-
-        self._num_players = min(self._num_players, len(game.controllers))
-        self._axis_was_centered = False
         self._button_was_released = False
 
-        self._num_players_sprite = Sprite(self._render_num_players_surface())
-        self._num_players_sprite.rect.center = (window_width // 2, window_height // 2 - 30)
-        game.menu_sprites.add(self._num_players_sprite)
+        match self._state:
+            case SetupMenu.State.Start:
+                if len(game.controllers) == 0:
+                    self._start_options.controller = None
+                else:
+                    self._start_options.controller = game.controllers[0]
+                self._start_options.show(game)
+            case SetupMenu.State.Setup:
+                self._num_players = min(self._num_players, len(game.controllers))
+                self._axis_was_centered = False
+                game.menu_sprites.add(self._num_players_sprite)
+            case _:
+                assert False, f'Unknown state {self._state}'
 
-    def update(self, game: 'Game') -> None:
+    def _update_start(self, game: 'Game') -> None:
+        if self._start_options.controller is not None and len(game.controllers) == 0:
+            self._start_options.controller = None
+        elif self._start_options.controller is None and len(game.controllers) > 0:
+            self._start_options.controller = game.controllers[0]
+
+        self._start_options.update(game)
+
+        if len(game.controllers) > 0:
+            if self._button_was_released and game.controllers[0].get_activate_button():
+                match self._start_options.option_index:
+                    case 0:
+                        self._start_options.hide(game)
+                        game.menu_sprites.add(self._num_players_sprite)
+                        self._state = SetupMenu.State.Setup
+                    case 1:
+                        pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    def _update_setup(self, game: 'Game') -> None:
         old_num_players = self._num_players
 
         num_controllers = len(game.controllers)
@@ -113,17 +166,33 @@ class SetupMenu:
                 elif axis > 0.0 and self._num_players < num_controllers:
                     self._num_players += 1
 
-            activate_button = controller.get_activate_button()
-            if not self._button_was_released:
-                if not activate_button:
-                    self._button_was_released = True
-            else:
-                if activate_button:
+            if self._button_was_released:
+                if controller.get_activate_button():
                     game.menu_sprites.empty()
                     game.start_mission(self._num_players)
+                elif controller.get_deactivate_button():
+                    game.menu_sprites.remove(self._num_players_sprite)
+                    self._start_options.show(game)
+                    self._state = SetupMenu.State.Start
 
         if self._num_players != old_num_players:
             self._num_players_sprite.image = self._render_num_players_surface()
+
+    def update(self, game: 'Game') -> None:
+        match self._state:
+            case SetupMenu.State.Start:
+                self._update_start(game)
+            case SetupMenu.State.Setup:
+                self._update_setup(game)
+            case _:
+                assert False, f'Unknown state {self._state}'
+
+        if len(game.controllers) > 0:
+            activate_button = game.controllers[0].get_activate_button()
+            if activate_button:
+                self._button_was_released = False
+            else:
+                self._button_was_released = True
 
 class PauseMenu:
     TextColor = pygame.color.Color(240, 11, 32)
@@ -156,7 +225,8 @@ class PauseMenu:
         self._state = PauseMenu.State.PausePress
 
         game.menu_sprites.add(self._paused_sprite)
-        self._options_menu.show(game, controller)
+        self._options_menu.controller = controller
+        self._options_menu.show(game)
 
     def update(self, game: 'Game') -> None:
         self._options_menu.update(game)
