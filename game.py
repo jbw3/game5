@@ -7,6 +7,7 @@ import sys
 
 from asteroid import Asteroid
 from controller import Controller
+from enemy_ship import EnemyShip
 from person import Person
 from resource_loader import ResourceLoader
 from ship import Ship
@@ -575,6 +576,14 @@ class Game:
             y = random.randint(0, flight_view_height // 10)
             Asteroid(self, Asteroid.Size.Big, (x, y))
 
+    def _create_enemy_ships(self) -> None:
+        flight_view_size = self._flight_view_surface.get_size()
+        flight_view_width, flight_view_height = flight_view_size
+
+        x = flight_view_width // 2
+        y = flight_view_height // 10
+        EnemyShip(self, x, y)
+
     def start_setup(self) -> None:
         self._state = Game.State.Setup
 
@@ -605,7 +614,11 @@ class Game:
 
         self._asteroid_create_count = 0
         self._asteroid_inc_count = num_players
-        self._create_asteroids()
+
+        if self.debug:
+            self._create_enemy_ships()
+        else:
+            self._create_asteroids()
 
         # create people
         for i in range(num_players):
