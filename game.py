@@ -3,6 +3,7 @@ import logging
 import pygame
 import pygame.locals
 import random
+import sys
 
 from asteroid import Asteroid
 from controller import Controller
@@ -291,6 +292,8 @@ class Game:
         self._display_surf = pygame.display.set_mode(flags=pygame.FULLSCREEN)
         display_width, display_height = self._display_surf.get_size()
 
+        self._logger.info(f'Python version: {sys.version}')
+        self._logger.info(f'Pygame version: {pygame.version.ver}')
         self._logger.info(f'Display size: {display_width}, {display_height}')
 
         self._setup_menu = SetupMenu()

@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', action='store_true', help='enable features to aid in debugging')
-    parser.add_argument('-l', '--logging', choices=logging_choices, default='WARNING', help='logging level')
+    parser.add_argument('-l', '--logging', choices=logging_choices, default='INFO', help='logging level')
 
     args = parser.parse_args()
     return args
