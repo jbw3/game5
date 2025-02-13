@@ -265,7 +265,8 @@ class Game:
         Mission = 1
         PostMission = 2
 
-    def __init__(self):
+    def __init__(self, debug: bool=False):
+        self._debug = debug
         self._logger = logging.getLogger('Game')
 
         pygame.init()
@@ -345,6 +346,10 @@ class Game:
         self._asteroid_count = 0
         self._asteroid_create_count = 0
         self._asteroid_inc_count = 0
+
+    @property
+    def debug(self) -> bool:
+        return self._debug
 
     @property
     def resource_loader(self) -> ResourceLoader:

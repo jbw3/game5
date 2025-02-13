@@ -15,6 +15,7 @@ def parse_args() -> argparse.Namespace:
     ]
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--debug', action='store_true', help='enable features to aid in debugging')
     parser.add_argument('-l', '--logging', choices=logging_choices, default='WARNING', help='logging level')
 
     args = parser.parse_args()
@@ -29,7 +30,7 @@ def main() -> None:
     logging.basicConfig(filename=os.path.join(log_dir, log_filename), filemode='w', level=args.logging)
 
     try:
-        g = game.Game()
+        g = game.Game(args.debug)
         g.mainloop()
     except:
         logger = logging.getLogger('main')
