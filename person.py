@@ -33,6 +33,7 @@ class Person(Animation):
         self._y = float(center[1])
 
         game.interior_view_sprites.add(self)
+        game.interior_solid_sprites.add(self)
 
         self._controller = controller
         self._state: Person.State = Person.State.Moving
