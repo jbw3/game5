@@ -1,5 +1,6 @@
 from animation import Animation
 from enum import Enum, unique
+import pygame
 import random
 from typing import TYPE_CHECKING, override
 
@@ -50,6 +51,7 @@ class Asteroid(FlightCollisionSprite):
 
         super().__init__(random.choice(images), float(center[0]), float(center[1]), dx, dy)
         self.rect.center = center
+        self.mask = pygame.mask.from_surface(self.image)
 
         game.flight_view_sprites.add(self)
         game.flight_collision_sprites.add(self)
