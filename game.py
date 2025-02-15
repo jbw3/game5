@@ -692,8 +692,6 @@ class Game:
                 if self._paused:
                     self._pause_menu.update(self)
                 else:
-                    if self._ship is not None:
-                        self._ship.update(self)
                     for sprite in self.interior_view_sprites:
                         sprite.update(self)
                     for sprite in self.flight_view_sprites:

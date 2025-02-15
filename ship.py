@@ -9,7 +9,7 @@ from animation import Animation
 from door import Door
 from laser import Laser
 from person import Person
-from sprite import Sprite
+from sprite import FlightCollisionSprite, Sprite
 
 if TYPE_CHECKING:
     from game import Game
@@ -178,7 +178,7 @@ class WeaponSystemConsole(Console):
         self.rect = old_rect
         self.dirty = 1
 
-class Ship:
+class Ship(FlightCollisionSprite):
     MAX_ACCELERATION = 5.0
     LASER_DELAY = 500 # ms
     AIM_ANGLE_RATE = 120.0 # degrees
@@ -190,10 +190,25 @@ class Ship:
         self.game = game
         self._logger = logging.getLogger('Ship')
         flight_view_center = (game.flight_view_size[0] // 2, game.flight_view_size[1] // 2)
-        self._x = float(flight_view_center[0])
-        self._y = float(flight_view_center[1])
-        self._dx = 0.0
-        self._dy = 0.0
+
+        background_image = game.resource_loader.load_image('ship1.png')
+        self._background_sprite = Sprite(background_image)
+        self._background_sprite.rect.center = interior_view_center
+
+        # flight view image
+        ship_image_size = background_image.get_size()
+        new_size = (ship_image_size[0] // 15, ship_image_size[1] // 15)
+        flight_view_image = pygame.transform.scale(background_image, new_size)
+        super().__init__(
+            flight_view_image,
+            float(flight_view_center[0]),
+            float(flight_view_center[1]),
+            0.0,
+            0.0,
+        )
+        self.rect.center = flight_view_center
+        game.flight_view_sprites.add(self)
+        game.flight_collision_sprites.add(self)
 
         # start ship with a small, random velocity
         while (self._dx**2 + self._dy**2)**0.5 < 1.0:
@@ -203,10 +218,6 @@ class Ship:
         self._num_weapons = 2
         self._next_available_laser_fire = [0, 0]
         self._hull = 10
-
-        background_image = game.resource_loader.load_image('ship1.png')
-        self._background_sprite = Sprite(background_image)
-        self._background_sprite.rect.center = interior_view_center
 
         self._floor: list[Sprite] = []
         self._walls: list[Sprite] = []
@@ -220,14 +231,6 @@ class Ship:
         self._update_hull_info()
         game.info_overlay_sprites.add(self._hull_text)
 
-        # flight view image
-        ship_image_size = background_image.get_size()
-        new_size = (ship_image_size[0] // 15, ship_image_size[1] // 15)
-        flight_view_image = pygame.transform.scale(background_image, new_size)
-        self._flight_sprite = Sprite(flight_view_image)
-        self._flight_sprite.rect.center = flight_view_center
-        game.flight_view_sprites.add(self._flight_sprite)
-
         # weapon aiming
         self._aiming: list[AimSprite] = []
         self._weapon_enabled: list[bool] = []
@@ -236,19 +239,11 @@ class Ship:
             (0, 240, 0),
         ]
         for i in range(self._num_weapons):
-            aim_sprite = AimSprite(colors[i], self._flight_sprite.rect.center)
+            aim_sprite = AimSprite(colors[i], self.rect.center)
             self._aiming.append(aim_sprite)
             self._weapon_enabled.append(True)
 
         self._engine_enabled = True
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @property
-    def y(self) -> float:
-        return self._y
 
     @property
     def num_weapons(self) -> int:
@@ -479,7 +474,7 @@ class Ship:
             ticks = pygame.time.get_ticks()
             if ticks >= self._next_available_laser_fire[weapon_index]:
                 angle = self._aiming[weapon_index].angle
-                Laser(self.game, self._flight_sprite.rect.center, angle, self._flight_sprite)
+                Laser(self.game, self.rect.center, angle, self)
                 self._next_available_laser_fire[weapon_index] = ticks + Ship.LASER_DELAY
 
     def update(self, game: 'Game') -> None:
@@ -489,34 +484,37 @@ class Ship:
         self._x += self._dx * game.frame_time
         self._y += self._dy * game.frame_time
 
-        self._flight_sprite.rect.center = (int(self._x), int(self._y))
+        self.rect.center = (int(self._x), int(self._y))
 
         # wrap around if the ship goes past the top or bottom of the screen
-        if self._flight_sprite.rect.top >= game.flight_view_size[1]:
-            self._flight_sprite.rect.bottom = 0
-            self._y = float(self._flight_sprite.rect.centery)
-        elif self._flight_sprite.rect.bottom <= 0:
-            self._flight_sprite.rect.top = game.flight_view_size[1]
-            self._y = float(self._flight_sprite.rect.centery)
+        if self.rect.top >= game.flight_view_size[1]:
+            self.rect.bottom = 0
+            self._y = float(self.rect.centery)
+        elif self.rect.bottom <= 0:
+            self.rect.top = game.flight_view_size[1]
+            self._y = float(self.rect.centery)
 
         # wrap around if the ship goes past the left or right of the screen
-        if self._flight_sprite.rect.left >= game.flight_view_size[0]:
-            self._flight_sprite.rect.right = 0
-            self._x = float(self._flight_sprite.rect.centerx)
-        elif self._flight_sprite.rect.right <= 0:
-            self._flight_sprite.rect.left = game.flight_view_size[0]
-            self._x = float(self._flight_sprite.rect.centerx)
+        if self.rect.left >= game.flight_view_size[0]:
+            self.rect.right = 0
+            self._x = float(self.rect.centerx)
+        elif self.rect.right <= 0:
+            self.rect.left = game.flight_view_size[0]
+            self._x = float(self.rect.centerx)
 
         for aiming in self._aiming:
-            aiming.origin = self._flight_sprite.rect.center
+            aiming.origin = self.rect.center
 
         collision = False
         total_force = 0.0
-        for sprite in pygame.sprite.spritecollide(self._flight_sprite, game.flight_collision_sprites, False):
+        for sprite in pygame.sprite.spritecollide(self, game.flight_collision_sprites, False):
+            if sprite is self:
+                continue
+
             # elastic collision equations
 
             # use sprite area as "mass"
-            my_mass = self._flight_sprite.rect.width * self._flight_sprite.rect.height
+            my_mass = self.rect.width * self.rect.height
             other_mass = sprite.rect.width * sprite.rect.height
             mass_sum = my_mass + other_mass
 
@@ -547,22 +545,22 @@ class Ship:
             sprite.collide(game, other_dx, other_dy, force)
             collision = True
 
-            my_x = self._flight_sprite.rect.x
-            my_y = self._flight_sprite.rect.y
+            my_x = self.rect.x
+            my_y = self.rect.y
             other_x = sprite.rect.x
             other_y = sprite.rect.y
             if abs(other_x - my_x) < abs(other_y - my_y):
                 if my_y < other_y:
-                    self._flight_sprite.rect.bottom = sprite.rect.top
+                    self.rect.bottom = sprite.rect.top
                 else:
-                    self._flight_sprite.rect.top = sprite.rect.bottom
-                self._y = float(self._flight_sprite.rect.centery)
+                    self.rect.top = sprite.rect.bottom
+                self._y = float(self.rect.centery)
             else:
                 if my_x < other_x:
-                    self._flight_sprite.rect.right = sprite.rect.left
+                    self.rect.right = sprite.rect.left
                 else:
-                    self._flight_sprite.rect.left = sprite.rect.right
-                self._x = float(self._flight_sprite.rect.centerx)
+                    self.rect.left = sprite.rect.right
+                self._x = float(self.rect.centerx)
 
         if collision:
             hit_points = int(total_force / 20_000)
@@ -582,11 +580,19 @@ class Ship:
             if self._hull <= 0:
                 self.destroy()
 
+    @override
+    def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
+        pass
+
+    @override
+    def damage(self, game: 'Game') -> None:
+        pass
+
     def destroy(self) -> None:
         # remove graphics
         for i in range(len(self._aiming)):
             self.disable_aiming(i)
-        self.game.flight_view_sprites.remove(self._flight_sprite)
+        self.kill()
 
         # create explosion graphic
         explosion_images = [
@@ -594,7 +600,7 @@ class Ship:
             for i in range(8)
         ]
         explosion = Animation(explosion_images, 62)
-        explosion.rect.center = self._flight_sprite.rect.center
+        explosion.rect.center = self.rect.center
         self.game.flight_view_sprites.add(explosion)
 
         self.game.end_mission(delay=True)

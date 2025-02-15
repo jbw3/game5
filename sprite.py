@@ -22,7 +22,7 @@ class Sprite(pygame.sprite.DirtySprite):
         self.rect.topleft = old_topleft
 
 class FlightCollisionSprite(Sprite):
-    def __init__(self, image: pygame.surface.Surface, x: float, y: float, dx: float, dy: float):
+    def __init__(self, image: pygame.surface.Surface, x: float=0.0, y: float=0.0, dx: float=0.0, dy: float=0.0):
         super().__init__(image)
         self._x = x
         self._y = y
