@@ -573,19 +573,20 @@ class Ship(FlightCollisionSprite):
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:
-        if self._engine_enabled and hit_points > 0:
+        if self._engine_enabled and hit_points > 0 and random.randint(0, 1) == 0:
             self.disable_engine()
             hit_points -= 1
 
         for i in range(len(self._weapon_enabled)):
-            if self._weapon_enabled[i] and hit_points > 0:
+            if self._weapon_enabled[i] and hit_points > 0 and random.randint(0, 1) == 0:
                 self.disable_weapon(i)
                 hit_points -= 1
 
-        self._hull = max(0, self._hull - hit_points)
-        self._update_hull_info()
-        if self._hull <= 0:
-            self.destroy()
+        if hit_points > 0:
+            self._hull = max(0, self._hull - hit_points)
+            self._update_hull_info()
+            if self._hull <= 0:
+                self.destroy()
 
     def destroy(self) -> None:
         # remove graphics
