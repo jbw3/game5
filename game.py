@@ -55,6 +55,10 @@ class OptionsMenu:
             sprite.image = self._font.render(text, True, self._color)
             sprite.rect.center = old_center
 
+    def set_option_text(self, index: int, text: str) -> None:
+        self._options_text[index] = text
+        self._update_options()
+
     def show(self, game: 'Game') -> None:
         self._axis_was_centered = False
         self._option_index = 0
@@ -97,20 +101,18 @@ class SetupMenu:
         self._button_was_released = False
 
         window_width, window_height = pygame.display.get_window_size()
-        options = [
+        start_options = [
             'Start',
             'Quit',
         ]
-        self._start_options = OptionsMenu(options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
+        self._start_options = OptionsMenu(start_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
 
-        self._num_players_sprite = Sprite(self._render_num_players_surface())
-        self._num_players_sprite.rect.center = (window_width // 2, window_height // 2 - 30)
+        setup_options = [
+            f'Players: {self._num_players}',
+        ]
+        self._setup_options = OptionsMenu(setup_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
 
         self._state = SetupMenu.State.Start
-
-    def _render_num_players_surface(self) -> pygame.surface.Surface:
-        text_surface = self._font.render(f'Players: < {self._num_players} >', True, SetupMenu.TextColor)
-        return text_surface
 
     def start(self, game: 'Game') -> None:
         self._button_was_released = False
@@ -125,7 +127,7 @@ class SetupMenu:
             case SetupMenu.State.Setup:
                 self._num_players = min(self._num_players, len(game.controllers))
                 self._axis_was_centered = False
-                game.menu_sprites.add(self._num_players_sprite)
+                self._setup_options.show(game)
             case _:
                 assert False, f'Unknown state {self._state}'
 
@@ -142,7 +144,7 @@ class SetupMenu:
                 match self._start_options.option_index:
                     case 0:
                         self._start_options.hide(game)
-                        game.menu_sprites.add(self._num_players_sprite)
+                        self._setup_options.show(game)
                         self._state = SetupMenu.State.Setup
                     case 1:
                         pygame.event.post(pygame.event.Event(pygame.QUIT))
@@ -163,22 +165,33 @@ class SetupMenu:
                 self._axis_was_centered = True
             elif self._axis_was_centered:
                 self._axis_was_centered = False
-                if axis < 0.0 and self._num_players > 1:
-                    self._num_players -= 1
-                elif axis > 0.0 and self._num_players < num_controllers:
-                    self._num_players += 1
+                if axis < 0.0:
+                    self._setup_option_decrement(game)
+                elif axis > 0.0:
+                    self._setup_option_increment(game)
 
             if self._button_was_released:
                 if controller.get_activate_button():
                     game.menu_sprites.empty()
                     game.start_mission(self._num_players)
                 elif controller.get_deactivate_button():
-                    game.menu_sprites.remove(self._num_players_sprite)
+                    self._setup_options.hide(game)
                     self._start_options.show(game)
                     self._state = SetupMenu.State.Start
 
         if self._num_players != old_num_players:
-            self._num_players_sprite.image = self._render_num_players_surface()
+            self._setup_options.set_option_text(0, f'Players: {self._num_players}')
+
+    def _setup_option_increment(self, game: 'Game') -> None:
+        if self._setup_options.option_index == 0:
+            num_controllers = len(game.controllers)
+            if self._num_players < num_controllers:
+                self._num_players += 1
+
+    def _setup_option_decrement(self, game: 'Game') -> None:
+        if self._setup_options.option_index == 0:
+            if self._num_players > 1:
+                self._num_players -= 1
 
     def update(self, game: 'Game') -> None:
         match self._state:
@@ -266,6 +279,11 @@ class Game:
         Setup = 0
         Mission = 1
         PostMission = 2
+
+    @unique
+    class Mode(Enum):
+        AsteroidField = 0
+        Combat = 1
 
     def __init__(self, debug: bool=False):
         self._debug = debug
