@@ -41,6 +41,6 @@ class Laser(Sprite):
         collide_sprites = pygame.sprite.spritecollide(self, game.flight_collision_sprites, False, pygame.sprite.collide_mask)
         for sprite in collide_sprites:
             if sprite is not self._parent:
-                sprite.damage(game)
+                sprite.damage(game, 1)
                 self.kill()
                 break

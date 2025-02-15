@@ -90,10 +90,10 @@ class Asteroid(FlightCollisionSprite):
             (self._size == Asteroid.Size.Medium and force >= 250_000) or
             (self._size == Asteroid.Size.Big and force >= 500_000)
             ):
-            self.damage(game)
+            self.damage(game, 1)
 
     @override
-    def damage(self, game: 'Game') -> None:
+    def damage(self, game: 'Game', hit_points: int) -> None:
         game.flight_view_sprites.remove(self)
         game.flight_collision_sprites.remove(self)
 

@@ -78,8 +78,8 @@ class EnemyShip(FlightCollisionSprite):
             self.destroy()
 
     @override
-    def damage(self, game: 'Game') -> None:
-        self._hull -= 1
+    def damage(self, game: 'Game', hit_points: int) -> None:
+        self._hull -= hit_points
         if self._hull <= 0:
             self.destroy()
 

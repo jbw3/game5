@@ -48,5 +48,5 @@ class FlightCollisionSprite(Sprite):
     def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         pass
 
-    def damage(self, game: 'Game') -> None:
+    def damage(self, game: 'Game', hit_points: int) -> None:
         pass

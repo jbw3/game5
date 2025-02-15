@@ -565,28 +565,27 @@ class Ship(FlightCollisionSprite):
         if collision:
             hit_points = int(total_force / 20_000)
             self._logger.info(f'Collision: total force: {total_force:.1f}, hit points: {hit_points}')
-
-            if self._engine_enabled and hit_points > 0:
-                self.disable_engine()
-                hit_points -= 1
-
-            for i in range(len(self._weapon_enabled)):
-                if self._weapon_enabled[i] and hit_points > 0:
-                    self.disable_weapon(i)
-                    hit_points -= 1
-
-            self._hull = max(0, self._hull - hit_points)
-            self._update_hull_info()
-            if self._hull <= 0:
-                self.destroy()
+            self.damage(game, hit_points)
 
     @override
     def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         pass
 
     @override
-    def damage(self, game: 'Game') -> None:
-        pass
+    def damage(self, game: 'Game', hit_points: int) -> None:
+        if self._engine_enabled and hit_points > 0:
+            self.disable_engine()
+            hit_points -= 1
+
+        for i in range(len(self._weapon_enabled)):
+            if self._weapon_enabled[i] and hit_points > 0:
+                self.disable_weapon(i)
+                hit_points -= 1
+
+        self._hull = max(0, self._hull - hit_points)
+        self._update_hull_info()
+        if self._hull <= 0:
+            self.destroy()
 
     def destroy(self) -> None:
         # remove graphics
