@@ -3,6 +3,7 @@ import pygame
 from typing import TYPE_CHECKING, override
 
 from aim_sprite import AimSprite
+from laser import Laser
 from sprite import FlightCollisionSprite
 
 if TYPE_CHECKING:
@@ -10,6 +11,7 @@ if TYPE_CHECKING:
 
 class EnemyShip(FlightCollisionSprite):
     AIM_ANGLE_RATE = 120.0 # degrees
+    LASER_DELAY = 500 # ms
 
     def __init__(self, game: 'Game', x: float, y: float):
         image = game.resource_loader.load_image('enemy_ship1.png')
@@ -28,8 +30,12 @@ class EnemyShip(FlightCollisionSprite):
         self._aim_angle = 90.0
         self._target_angle = self._aim_angle
 
+        self._next_available_laser_fire = 0
+
     @override
     def update(self, game: 'Game') -> None:
+        # calculate aim angle
+
         if game.ship is not None:
             x_diff = game.ship.x - self.x
             y_diff = game.ship.y - self.y
@@ -49,12 +55,24 @@ class EnemyShip(FlightCollisionSprite):
             self._aim_sprite.angle = self._aim_angle
             self._aim_sprite.origin = self.rect.center
 
+        # fire
+
+        angle_diff = (self._target_angle - self._aim_angle) % 360.0
+        if angle_diff < 0.5:
+            self.fire_laser(game)
+
+    def fire_laser(self, game: 'Game') -> None:
+        ticks = pygame.time.get_ticks()
+        if ticks >= self._next_available_laser_fire:
+            Laser(game, self.rect.center, self._aim_angle, self)
+            self._next_available_laser_fire = ticks + EnemyShip.LASER_DELAY
+
     @override
     def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         self._dx = new_dx
         self._dy = new_dy
 
-        hit_points = int(force / 10_000)
+        hit_points = int(force / 20_000)
         self._hull -= min(self._hull, hit_points)
         if self._hull <= 0:
             self.destroy()

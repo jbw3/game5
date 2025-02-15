@@ -12,10 +12,11 @@ class Laser(Sprite):
 
     SPEED = 1000
 
-    def __init__(self, game: 'Game', center: tuple[int, int], angle: float):
+    def __init__(self, game: 'Game', center: tuple[int, int], angle: float, parent: Sprite):
         super().__init__(pygame.transform.rotate(game.resource_loader.load_image(Laser.RED_IMAGE_NAME), angle))
         self.rect.center = center
         self.mask = pygame.mask.from_surface(self.image)
+        self._parent = parent
 
         game.flight_view_sprites.add(self)
 
@@ -38,6 +39,8 @@ class Laser(Sprite):
             game.flight_view_sprites.remove(self)
 
         collide_sprites = pygame.sprite.spritecollide(self, game.flight_collision_sprites, False, pygame.sprite.collide_mask)
-        if len(collide_sprites) > 0:
-            collide_sprites[0].damage(game)
-            game.flight_view_sprites.remove(self)
+        for sprite in collide_sprites:
+            if sprite is not self._parent:
+                sprite.damage(game)
+                self.kill()
+                break

@@ -479,7 +479,7 @@ class Ship:
             ticks = pygame.time.get_ticks()
             if ticks >= self._next_available_laser_fire[weapon_index]:
                 angle = self._aiming[weapon_index].angle
-                Laser(self.game, self._flight_sprite.rect.center, angle)
+                Laser(self.game, self._flight_sprite.rect.center, angle, self._flight_sprite)
                 self._next_available_laser_fire[weapon_index] = ticks + Ship.LASER_DELAY
 
     def update(self, game: 'Game') -> None:
