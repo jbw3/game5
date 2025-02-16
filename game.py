@@ -407,6 +407,9 @@ class Game:
         self._asteroid_count = 0
         self._asteroid_create_count = 0
         self._asteroid_inc_count = 0
+        self._enemy_count = 0
+        self._enemy_create_count = 0
+        self._enemy_inc_count = 0
 
     @property
     def debug(self) -> bool:
@@ -482,6 +485,12 @@ class Game:
 
         if self._asteroid_count == 0:
             self._create_asteroids()
+
+    def update_enemy_count(self, change: int) -> None:
+        self._enemy_count += change
+
+        if self._enemy_count == 0:
+            self._create_enemy_ships()
 
     def _build_timing_string(self, title: str, indent: int, times: list[int]) -> str:
         num_times = len(times)
@@ -639,11 +648,16 @@ class Game:
 
     def _create_enemy_ships(self) -> None:
         flight_view_size = self._flight_view_surface.get_size()
-        flight_view_width, flight_view_height = flight_view_size
+        flight_view_width, _ = flight_view_size
 
-        x = flight_view_width // 2
-        y = flight_view_height // 10
-        EnemyShip(self, x, y)
+        self._enemy_create_count += self._enemy_inc_count
+        self._enemy_count = self._enemy_create_count
+        x = flight_view_width//2 - self._enemy_count//2 * 40
+        y = 30
+        for i in range(self._enemy_count):
+            EnemyShip(self, x, y)
+            x += 40
+            y = 30 + 40 * (i // 10)
 
     def start_setup(self) -> None:
         self._state = Game.State.Setup
@@ -676,6 +690,8 @@ class Game:
 
         self._asteroid_create_count = 0
         self._asteroid_inc_count = num_players
+        self._enemy_create_count = 0
+        self._enemy_inc_count = 1
 
         match self._mode:
             case GameMode.AsteroidField:

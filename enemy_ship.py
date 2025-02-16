@@ -98,15 +98,17 @@ class EnemyShip(FlightCollisionSprite):
         hit_points = int(force / 20_000)
         self._hull -= min(self._hull, hit_points)
         if self._hull <= 0:
-            self.destroy()
+            self.destroy(game)
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:
         self._hull -= hit_points
         if self._hull <= 0:
-            self.destroy()
+            self.destroy(game)
 
-    def destroy(self) -> None:
+    def destroy(self, game: 'Game') -> None:
         # remove from all sprite groups
         self.kill()
         self._aim_sprite.kill()
+
+        game.update_enemy_count(-1)
