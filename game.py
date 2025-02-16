@@ -1,4 +1,4 @@
-from enum import Enum, unique
+from enum import Enum, IntEnum, unique
 import logging
 import pygame
 import pygame.locals
@@ -15,6 +15,22 @@ from sprite import FlightCollisionSprite, Sprite
 from stopwatch import Stopwatch
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
+
+@unique
+class GameMode(IntEnum):
+    AsteroidField = 0
+    Combat = 1
+
+GameModeInts = set(GameMode)
+
+def game_mode_to_str(game_mode: GameMode) -> str:
+    match game_mode:
+        case GameMode.AsteroidField:
+            return 'Asteroid Field'
+        case GameMode.Combat:
+            return 'Combat'
+        case _:
+            assert False, f'Unknown game mode: {game_mode}'
 
 class OptionsMenu:
     def __init__(self, options: list[str], font: pygame.font.Font, color: pygame.color.Color, x: int, top: int):
@@ -94,9 +110,10 @@ class SetupMenu:
         Start = 0
         Setup = 1
 
-    def __init__(self):
+    def __init__(self, game: 'Game'):
         self._font = pygame.font.SysFont('Courier', 60)
         self._num_players = 1
+        self._game_mode = GameMode.AsteroidField
         self._axis_was_centered = False
         self._button_was_released = False
 
@@ -110,6 +127,8 @@ class SetupMenu:
         setup_options = [
             f'Players: {self._num_players}',
         ]
+        if game.debug:
+            setup_options.append(f'Mode: {game_mode_to_str(game.mode)}')
         self._setup_options = OptionsMenu(setup_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
 
         self._state = SetupMenu.State.Start
@@ -126,6 +145,7 @@ class SetupMenu:
                 self._start_options.show(game)
             case SetupMenu.State.Setup:
                 self._num_players = min(self._num_players, len(game.controllers))
+                self._game_mode = game.mode
                 self._axis_was_centered = False
                 self._setup_options.show(game)
             case _:
@@ -151,15 +171,19 @@ class SetupMenu:
 
     def _update_setup(self, game: 'Game') -> None:
         old_num_players = self._num_players
+        old_game_mode = self._game_mode
 
         num_controllers = len(game.controllers)
         self._num_players = min(self._num_players, num_controllers)
 
         if num_controllers > 0:
+            controller = game.controllers[0]
+            self._setup_options.controller = controller
+            self._setup_options.update(game)
+
             if self._num_players == 0:
                 self._num_players = 1
 
-            controller = game.controllers[0]
             axis = controller.get_move_x_axis()
             if abs(axis) < 0.001:
                 self._axis_was_centered = True
@@ -173,25 +197,43 @@ class SetupMenu:
             if self._button_was_released:
                 if controller.get_activate_button():
                     game.menu_sprites.empty()
-                    game.start_mission(self._num_players)
+                    game.start_mission(self._num_players, self._game_mode)
                 elif controller.get_deactivate_button():
                     self._setup_options.hide(game)
                     self._start_options.show(game)
                     self._state = SetupMenu.State.Start
 
+        else: # num_controllers == 0
+            self._setup_options.controller = None
+
         if self._num_players != old_num_players:
             self._setup_options.set_option_text(0, f'Players: {self._num_players}')
 
+        if self._game_mode != old_game_mode:
+            self._setup_options.set_option_text(1, f'Mode: {game_mode_to_str(self._game_mode)}')
+
     def _setup_option_increment(self, game: 'Game') -> None:
-        if self._setup_options.option_index == 0:
-            num_controllers = len(game.controllers)
-            if self._num_players < num_controllers:
-                self._num_players += 1
+        match self._setup_options.option_index:
+            case 0:
+                num_controllers = len(game.controllers)
+                if self._num_players < num_controllers:
+                    self._num_players += 1
+            case 1:
+                if self._game_mode + 1 in GameModeInts:
+                    self._game_mode = GameMode(self._game_mode + 1)
+            case _:
+                assert False, f'Unknown option index: {self._setup_options.option_index}'
 
     def _setup_option_decrement(self, game: 'Game') -> None:
-        if self._setup_options.option_index == 0:
-            if self._num_players > 1:
-                self._num_players -= 1
+        match self._setup_options.option_index:
+            case 0:
+                if self._num_players > 1:
+                    self._num_players -= 1
+            case 1:
+                if self._game_mode - 1 in GameModeInts:
+                    self._game_mode = GameMode(self._game_mode - 1)
+            case _:
+                assert False, f'Unknown option index: {self._setup_options.option_index}'
 
     def update(self, game: 'Game') -> None:
         match self._state:
@@ -280,11 +322,6 @@ class Game:
         Mission = 1
         PostMission = 2
 
-    @unique
-    class Mode(Enum):
-        AsteroidField = 0
-        Combat = 1
-
     def __init__(self, debug: bool=False):
         self._debug = debug
         self._logger = logging.getLogger('Game')
@@ -315,7 +352,9 @@ class Game:
         self._logger.info(f'Pygame version: {pygame.version.ver}')
         self._logger.info(f'Display size: {display_width}, {display_height}')
 
-        self._setup_menu = SetupMenu()
+        self._mode = GameMode.AsteroidField
+
+        self._setup_menu = SetupMenu(self)
         self._pause_menu = PauseMenu()
 
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
@@ -372,6 +411,10 @@ class Game:
     @property
     def debug(self) -> bool:
         return self._debug
+
+    @property
+    def mode(self) -> GameMode:
+        return self._mode
 
     @property
     def resource_loader(self) -> ResourceLoader:
@@ -612,11 +655,12 @@ class Game:
         self._display_surf.blit(self._background, (0, 0))
         self._update_rects.append(self._display_surf.get_rect())
 
-    def start_mission(self, num_players: int) -> None:
+    def start_mission(self, num_players: int, game_mode: GameMode) -> None:
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
         self._state = Game.State.Mission
+        self._mode = game_mode
 
         # reset background
         self._background.blit(self._mission_background, (0, 0))
@@ -633,10 +677,11 @@ class Game:
         self._asteroid_create_count = 0
         self._asteroid_inc_count = num_players
 
-        if self.debug:
-            self._create_enemy_ships()
-        else:
-            self._create_asteroids()
+        match self._mode:
+            case GameMode.AsteroidField:
+                self._create_asteroids()
+            case GameMode.Combat:
+                self._create_enemy_ships()
 
         # create people
         for i in range(num_players):
