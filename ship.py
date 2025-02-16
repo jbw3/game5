@@ -180,7 +180,7 @@ class WeaponSystemConsole(Console):
 
 class Ship(FlightCollisionSprite):
     MAX_ACCELERATION = 5.0
-    LASER_DELAY = 500 # ms
+    LASER_DELAY = 0.5 # seconds
     AIM_ANGLE_RATE = 120.0 # degrees
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
@@ -216,7 +216,7 @@ class Ship(FlightCollisionSprite):
             self._dy = random.random() * 10 - 5
 
         self._num_weapons = 2
-        self._next_available_laser_fire = [0, 0]
+        self._laser_fire_timers = [0.0, 0.0]
         self._hull = 10
 
         self._floor: list[Sprite] = []
@@ -471,13 +471,15 @@ class Ship(FlightCollisionSprite):
 
     def fire_laser(self, weapon_index: int) -> None:
         if self._weapon_enabled[weapon_index]:
-            ticks = pygame.time.get_ticks()
-            if ticks >= self._next_available_laser_fire[weapon_index]:
+            if self._laser_fire_timers[weapon_index] <= 0.0:
                 angle = self._aiming[weapon_index].angle
                 Laser(self.game, self.rect.center, angle, self)
-                self._next_available_laser_fire[weapon_index] = ticks + Ship.LASER_DELAY
+                self._laser_fire_timers[weapon_index] = Ship.LASER_DELAY
 
     def update(self, game: 'Game') -> None:
+        for i in range(len(self._laser_fire_timers)):
+            self._laser_fire_timers[i] = max(0.0, self._laser_fire_timers[i] - game.frame_time)
+
         for console in self._consoles:
             console.update_ship(game, self)
 

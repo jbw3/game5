@@ -29,8 +29,8 @@ class EnemyShip(FlightCollisionSprite):
         self._aim_angle = 90.0
         self._target_angle = self._aim_angle
 
-        self._next_available_laser_fire = 0
-        self._laser_delay = 2000 # ms
+        self._laser_fire_timer = 0.0
+        self._laser_delay = 2.0 # seconds
 
     @override
     def update(self, game: 'Game') -> None:
@@ -57,15 +57,15 @@ class EnemyShip(FlightCollisionSprite):
 
         # fire
 
+        self._laser_fire_timer = max(0.0, self._laser_fire_timer - game.frame_time)
         angle_diff = (self._target_angle - self._aim_angle) % 360.0
         if angle_diff < 0.5:
             self.fire_laser(game)
 
     def fire_laser(self, game: 'Game') -> None:
-        ticks = pygame.time.get_ticks()
-        if ticks >= self._next_available_laser_fire:
+        if self._laser_fire_timer <= 0.0:
             Laser(game, self.rect.center, self._aim_angle, self)
-            self._next_available_laser_fire = ticks + self._laser_delay
+            self._laser_fire_timer = self._laser_delay
 
     @override
     def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
