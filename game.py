@@ -7,7 +7,7 @@ import sys
 
 from asteroid import Asteroid
 from controller import Controller
-from enemy_ship import EnemyShip
+from enemy_ship import EnemyShip, EnemyShipConfig
 from person import Person
 from resource_loader import ResourceLoader
 from ship import Ship
@@ -404,12 +404,11 @@ class Game:
 
         self._state: Game.State = Game.State.Setup
         self._ship: Ship|None = None
+        self._wave = 1
         self._asteroid_count = 0
         self._asteroid_create_count = 0
         self._asteroid_inc_count = 0
         self._enemy_count = 0
-        self._enemy_create_count = 0
-        self._enemy_inc_count = 0
 
     @property
     def debug(self) -> bool:
@@ -484,12 +483,14 @@ class Game:
         self._asteroid_count += change
 
         if self._asteroid_count == 0:
+            self._wave += 1
             self._create_asteroids()
 
     def update_enemy_count(self, change: int) -> None:
         self._enemy_count += change
 
         if self._enemy_count == 0:
+            self._wave += 1
             self._create_enemy_ships()
 
     def _build_timing_string(self, title: str, indent: int, times: list[int]) -> str:
@@ -650,12 +651,32 @@ class Game:
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, _ = flight_view_size
 
-        self._enemy_create_count += self._enemy_inc_count
-        self._enemy_count = self._enemy_create_count
+        if self._wave == 1:
+            initial_fire_delay = 6.0
+        else:
+            initial_fire_delay = 3.0
+
+        laser_delay = min(1.0, 3.5 - (self._wave * 0.5))
+
+        if self._wave <= 2:
+            max_aiming_iterations = 0
+        elif self._wave <= 5:
+            max_aiming_iterations = 1
+        else:
+            max_aiming_iterations = 5
+
+        config = EnemyShipConfig(
+            initial_fire_delay=initial_fire_delay,
+            laser_delay=laser_delay,
+            max_aiming_iterations=max_aiming_iterations,
+        )
+
+        self._enemy_count = self._wave // 5 + 1
+
         x = flight_view_width//2 - self._enemy_count//2 * 40
         y = 30
         for i in range(self._enemy_count):
-            EnemyShip(self, x, y)
+            EnemyShip(self, x, y, config)
             x += 40
             y = 30 + 40 * (i // 10)
 
@@ -688,10 +709,9 @@ class Game:
         self._display_surf.blit(self._interior_view_background, (0, 0))
         self._update_rects.append(self._interior_view_surface.get_rect())
 
+        self._wave = 1
         self._asteroid_create_count = 0
         self._asteroid_inc_count = num_players
-        self._enemy_create_count = 0
-        self._enemy_inc_count = 1
 
         match self._mode:
             case GameMode.AsteroidField:

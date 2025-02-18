@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import math
 import pygame
@@ -11,10 +12,16 @@ from sprite import FlightCollisionSprite
 if TYPE_CHECKING:
     from game import Game
 
+@dataclass
+class EnemyShipConfig:
+    initial_fire_delay: float # seconds
+    laser_delay: float # seconds
+    max_aiming_iterations: int
+
 class EnemyShip(FlightCollisionSprite):
     AIM_ANGLE_RATE = 120.0 # degrees
 
-    def __init__(self, game: 'Game', x: float, y: float):
+    def __init__(self, game: 'Game', x: float, y: float, config: EnemyShipConfig):
         self._logger = logging.getLogger('EnemyShip')
         image = game.resource_loader.load_image('enemy_ship1.png')
         super().__init__(image, x, y, 0.0, 0.0)
@@ -31,16 +38,17 @@ class EnemyShip(FlightCollisionSprite):
         self._hull = 3
         self._aim_angle = 90.0
         self._target_angle = self._aim_angle
+        self._max_aiming_iterations = config.max_aiming_iterations
 
-        self._initial_laser_fire_timer = 6.0 # seconds
+        self._initial_fire_timer = config.initial_fire_delay
         self._laser_fire_timer = 0.0
-        self._laser_delay = 2.0 # seconds
+        self._laser_delay = config.laser_delay
 
     @override
     def update(self, game: 'Game') -> None:
-        self._initial_laser_fire_timer = max(0.0, self._initial_laser_fire_timer - game.frame_time)
+        self._initial_fire_timer = max(0.0, self._initial_fire_timer - game.frame_time)
 
-        if game.ship is not None and self._initial_laser_fire_timer <= 0.0:
+        if game.ship is not None and self._initial_fire_timer <= 0.0:
             # calculate aim angle
 
             self._target_angle = self._calc_target_angle(game.ship)
@@ -72,7 +80,7 @@ class EnemyShip(FlightCollisionSprite):
         old_target_pos = Vector2(1_000_000.0, 1_000_000.0)
 
         i = 0
-        while i < 10 and target_pos.distance_to(old_target_pos) > 10.0:
+        while i < self._max_aiming_iterations and target_pos.distance_to(old_target_pos) > 10.0:
             old_target_pos = target_pos.copy()
             distance = self_pos.distance_to(target_pos)
             laser_travel_time = distance / Laser.SPEED
