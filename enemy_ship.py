@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from enum import Enum, unique
 import logging
 import math
 import pygame
 from pygame.math import Vector2
+import random
 from typing import TYPE_CHECKING, override
 
 from aim_sprite import AimSprite
@@ -20,12 +22,20 @@ class EnemyShipConfig:
     max_aiming_iterations: int
 
 class EnemyShip(FlightCollisionSprite):
+    MAX_ACCELERATION = 5.0
     AIM_ANGLE_RATE = 120.0 # degrees
+
+    @unique
+    class MoveState(Enum):
+        MovingToTarget = 0
+        HoldingAtTarget = 1
 
     def __init__(self, game: 'Game', x: float, y: float, config: EnemyShipConfig):
         self._logger = logging.getLogger('EnemyShip')
         image = game.resource_loader.load_image('enemy_ship1.png')
         super().__init__(image, x, y, 0.0, 0.0)
+        self._x = float(x)
+        self._y = float(y)
         self.rect.center = (int(x), int(y))
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -37,43 +47,115 @@ class EnemyShip(FlightCollisionSprite):
             game.flight_view_sprites.add(self._aim_sprite)
 
         self._hull = 3
+
+        self._move_state = EnemyShip.MoveState.MovingToTarget
+        self._move_target: Vector2 = self._calc_move_target(game)
+
         self._aim_angle = 90.0
         self._target_angle = self._aim_angle
         self._max_aiming_iterations = config.max_aiming_iterations
-
         self._initial_fire_timer = config.initial_fire_delay
         self._laser_fire_timer = 0.0
         self._laser_delay = config.laser_delay
 
     @override
     def update(self, game: 'Game') -> None:
+        self._update_engine(game)
+        self._update_weapon(game)
+
+    def _calc_move_target(self, game: 'Game') -> Vector2:
+        view_width, view_height = game.flight_view_size
+        x = random.randint(-20, 20)
+        y = random.randint(-30, 30)
+
+        match random.randint(0, 3):
+            case 0:
+                x += view_width // 6
+                y += view_height // 6
+            case 1:
+                x += view_width * 5 // 6
+                y += view_height // 6
+            case 2:
+                x += view_width // 6
+                y += view_height * 5 // 6
+            case 3:
+                x += view_width * 5 // 6
+                y += view_height * 5 // 6
+
+        return Vector2(x, y)
+
+    def _update_engine(self, game: 'Game') -> None:
+        self_pos = Vector2(self.x, self.y)
+        self_vel = Vector2(self.dx, self.dy)
+        target_distance = self_pos.distance_to(self._move_target)
+        self._logger.debug(f'move target distance: {target_distance}')
+
+        match self._move_state:
+            case EnemyShip.MoveState.MovingToTarget:
+                if target_distance < 10.0 and self_vel.magnitude() < 0.5:
+                    self._move_state = EnemyShip.MoveState.HoldingAtTarget
+                else:
+                    max_target_vel = 300.0
+                    target_vel_unit = (self._move_target - self_pos).normalize()
+                    target_vel: Vector2
+                    if target_distance < 10.0:
+                        target_vel = Vector2(0.0, 0.0)
+                    elif target_distance < 150.0:
+                        target_vel = (target_distance / 150.0) * max_target_vel * target_vel_unit
+                    else:
+                        target_vel = max_target_vel * target_vel_unit
+
+                    accel = target_vel - self_vel
+                    if accel.magnitude() > EnemyShip.MAX_ACCELERATION:
+                        accel = accel.normalize() * EnemyShip.MAX_ACCELERATION
+
+                    self._dx += accel.x
+                    self._dy += accel.y
+
+            case EnemyShip.MoveState.HoldingAtTarget:
+                if target_distance >= 10.0:
+                    self._move_state = EnemyShip.MoveState.MovingToTarget
+                else:
+                    self._move_target = self._calc_move_target(game)
+                    self._move_state = EnemyShip.MoveState.MovingToTarget
+
+            case _:
+                assert False, f'Unknown move state: {self._move_state}'
+
+        self._x += self._dx * game.frame_time
+        self._y += self._dy * game.frame_time
+        self.rect.center = (int(self._x), int(self._y))
+        self._aim_sprite.origin = self.rect.center
+
+    def _update_weapon(self, game: 'Game') -> None:
         self._initial_fire_timer = max(0.0, self._initial_fire_timer - game.frame_time)
+        if game.ship is None or self._initial_fire_timer > 0.0:
+            return
 
-        if game.ship is not None and self._initial_fire_timer <= 0.0:
-            # calculate aim angle
+        # calculate aim angle
 
-            self._target_angle = self._calc_target_angle(game.ship)
+        self._target_angle = self._calc_target_angle(game.ship)
 
-            max_angle_move = EnemyShip.AIM_ANGLE_RATE * game.frame_time
-            angle_diff = (self._target_angle - self._aim_angle) % 360.0
-            if angle_diff <= max_angle_move:
-                self._aim_angle = self._target_angle
-            elif angle_diff <= 180.0:
-                self._aim_angle += max_angle_move
-            else:
-                self._aim_angle -= max_angle_move
-            self._aim_angle %= 360.0
+        max_angle_move = EnemyShip.AIM_ANGLE_RATE * game.frame_time
+        angle_diff = (self._target_angle - self._aim_angle) % 360.0
+        if angle_diff <= max_angle_move:
+            self._aim_angle = self._target_angle
+        elif angle_diff <= 180.0:
+            self._aim_angle += max_angle_move
+        else:
+            self._aim_angle -= max_angle_move
+        self._aim_angle %= 360.0
 
-            if game.debug:
-                self._aim_sprite.angle = self._aim_angle
-                self._aim_sprite.origin = self.rect.center
+        if game.debug:
+            self._aim_sprite.angle = self._aim_angle
+            self._aim_sprite.origin = self.rect.center
 
-            # fire
+        # fire
 
-            self._laser_fire_timer = max(0.0, self._laser_fire_timer - game.frame_time)
-            angle_diff = (self._target_angle - self._aim_angle) % 360.0
-            if angle_diff < 0.5:
-                self.fire_laser(game)
+        self._laser_fire_timer = max(0.0, self._laser_fire_timer - game.frame_time)
+        angle_diff = (self._target_angle - self._aim_angle) % 360.0
+        if angle_diff < 0.5:
+            self.fire_laser(game)
 
     def _calc_target_angle(self, target: FlightCollisionSprite) -> float:
         self_pos = Vector2(self.x, self.y)
