@@ -32,12 +32,15 @@ class EnemyShip(FlightCollisionSprite):
         self._aim_angle = 90.0
         self._target_angle = self._aim_angle
 
+        self._initial_laser_fire_timer = 6.0 # seconds
         self._laser_fire_timer = 0.0
         self._laser_delay = 2.0 # seconds
 
     @override
     def update(self, game: 'Game') -> None:
-        if game.ship is not None:
+        self._initial_laser_fire_timer = max(0.0, self._initial_laser_fire_timer - game.frame_time)
+
+        if game.ship is not None and self._initial_laser_fire_timer <= 0.0:
             # calculate aim angle
 
             self._target_angle = self._calc_target_angle(game.ship)
