@@ -315,6 +315,7 @@ class Game:
     MAX_FRAME_TIME_MS = 1000 / MAX_FPS
 
     RESET_GAME_EVENT = pygame.event.custom_type()
+    START_WAVE_EVENT = pygame.event.custom_type()
 
     @unique
     class State(Enum):
@@ -404,10 +405,9 @@ class Game:
 
         self._state: Game.State = Game.State.Setup
         self._ship: Ship|None = None
+        self._num_players = 0
         self._wave = 1
         self._asteroid_count = 0
-        self._asteroid_create_count = 0
-        self._asteroid_inc_count = 0
         self._enemy_count = 0
 
     @property
@@ -483,15 +483,13 @@ class Game:
         self._asteroid_count += change
 
         if self._asteroid_count == 0:
-            self._wave += 1
-            self._create_asteroids()
+            self._end_wave()
 
     def update_enemy_count(self, change: int) -> None:
         self._enemy_count += change
 
         if self._enemy_count == 0:
-            self._wave += 1
-            self._create_enemy_ships()
+            self._end_wave()
 
     def _build_timing_string(self, title: str, indent: int, times: list[int]) -> str:
         num_times = len(times)
@@ -636,18 +634,17 @@ class Game:
 
         self.start_setup()
 
-    def _create_asteroids(self) -> None:
+    def _new_asteroid_wave(self) -> None:
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, flight_view_height = flight_view_size
 
-        self._asteroid_create_count += self._asteroid_inc_count
-        self._asteroid_count = self._asteroid_create_count
+        self._asteroid_count = self._wave * self._num_players
         for _ in range(self._asteroid_count):
             x = random.randint(0, flight_view_width - 1)
             y = random.randint(0, flight_view_height // 10)
             Asteroid(self, Asteroid.Size.Big, (x, y))
 
-    def _create_enemy_ships(self) -> None:
+    def _new_enemy_ship_wave(self) -> None:
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, _ = flight_view_size
 
@@ -709,15 +706,8 @@ class Game:
         self._display_surf.blit(self._interior_view_background, (0, 0))
         self._update_rects.append(self._interior_view_surface.get_rect())
 
+        self._num_players = num_players
         self._wave = 1
-        self._asteroid_create_count = 0
-        self._asteroid_inc_count = num_players
-
-        match self._mode:
-            case GameMode.AsteroidField:
-                self._create_asteroids()
-            case GameMode.Combat:
-                self._create_enemy_ships()
 
         # create people
         for i in range(num_players):
@@ -731,12 +721,28 @@ class Game:
             person = Person(self, (x, y), controller)
             self._people_sprites.add(person)
 
+        self._start_wave()
+
     def end_mission(self, delay: bool) -> None:
         self._state = Game.State.PostMission
         if delay:
             pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
         else:
             self._reset_game()
+
+    def _start_wave(self) -> None:
+        match self._mode:
+            case GameMode.AsteroidField:
+                self._new_asteroid_wave()
+            case GameMode.Combat:
+                self._new_enemy_ship_wave()
+            case _:
+                assert False, f'Unknown game mode: {self._mode}'
+
+    def _end_wave(self) -> None:
+        self._wave += 1
+
+        pygame.time.set_timer(Game.START_WAVE_EVENT, 3_000, 1)
 
     def _process_events(self) -> bool:
         quit_game = False
@@ -778,6 +784,9 @@ class Game:
 
                 case Game.RESET_GAME_EVENT:
                     self._reset_game()
+
+                case Game.START_WAVE_EVENT:
+                    self._start_wave()
 
         return quit_game
 
