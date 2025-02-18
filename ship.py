@@ -5,7 +5,7 @@ import random
 from typing import TYPE_CHECKING, override
 
 from aim_sprite import AimSprite
-from animation import Animation
+from animation import ShipExplosionAnimation
 from door import Door
 from laser import Laser
 from person import Person
@@ -597,12 +597,6 @@ class Ship(FlightCollisionSprite):
         self.kill()
 
         # create explosion graphic
-        explosion_images = [
-            self.game.resource_loader.load_image(f'explosion{i+1}.png')
-            for i in range(8)
-        ]
-        explosion = Animation(explosion_images, 62)
-        explosion.rect.center = self.rect.center
-        self.game.flight_view_sprites.add(explosion)
+        ShipExplosionAnimation(self.game, self.rect.center)
 
         self.game.end_mission(delay=True)

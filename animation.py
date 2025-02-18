@@ -38,3 +38,14 @@ class Animation(Sprite):
                 self.rect.center = old_center
                 self.dirty = 1
                 self._next_change += self._period
+
+class ShipExplosionAnimation(Animation):
+    def __init__(self, game: 'Game', center: tuple[int, int]):
+        explosion_images = [
+            game.resource_loader.load_image(f'explosion{i+1}.png')
+            for i in range(8)
+        ]
+        super().__init__(explosion_images, 62)
+        self.rect.center = center
+
+        game.flight_view_sprites.add(self)

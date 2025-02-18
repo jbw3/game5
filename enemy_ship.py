@@ -6,6 +6,7 @@ from pygame.math import Vector2
 from typing import TYPE_CHECKING, override
 
 from aim_sprite import AimSprite
+from animation import ShipExplosionAnimation
 from laser import Laser
 from sprite import FlightCollisionSprite
 
@@ -121,5 +122,8 @@ class EnemyShip(FlightCollisionSprite):
         # remove from all sprite groups
         self.kill()
         self._aim_sprite.kill()
+
+        # create explosion graphic
+        ShipExplosionAnimation(game, self.rect.center)
 
         game.update_enemy_count(-1)
