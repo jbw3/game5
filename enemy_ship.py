@@ -49,7 +49,8 @@ class EnemyShip(FlightCollisionSprite):
         self._hull = 3
 
         self._move_state = EnemyShip.MoveState.MovingToTarget
-        self._move_target: Vector2 = self._calc_move_target(game)
+        self._move_target = Vector2(self._x, self._y)
+        self._update_move_target(game)
 
         self._aim_angle = 90.0
         self._target_angle = self._aim_angle
@@ -63,26 +64,32 @@ class EnemyShip(FlightCollisionSprite):
         self._update_engine(game)
         self._update_weapon(game)
 
-    def _calc_move_target(self, game: 'Game') -> Vector2:
+    def _update_move_target(self, game: 'Game') -> None:
         view_width, view_height = game.flight_view_size
-        x = random.randint(-20, 20)
-        y = random.randint(-30, 30)
 
-        match random.randint(0, 3):
-            case 0:
-                x += view_width // 6
-                y += view_height // 6
-            case 1:
-                x += view_width * 5 // 6
-                y += view_height // 6
-            case 2:
-                x += view_width // 6
-                y += view_height * 5 // 6
-            case 3:
-                x += view_width * 5 // 6
-                y += view_height * 5 // 6
+        old_move_target = self._move_target.copy()
 
-        return Vector2(x, y)
+        # pick a new move target that is not too close to the current one
+        while self._move_target.distance_to(old_move_target) <= 100.0:
+            x = random.randint(-20, 20)
+            y = random.randint(-30, 30)
+
+            match random.randint(0, 3):
+                case 0:
+                    x += view_width // 6
+                    y += view_height // 6
+                case 1:
+                    x += view_width * 5 // 6
+                    y += view_height // 6
+                case 2:
+                    x += view_width // 6
+                    y += view_height * 5 // 6
+                case 3:
+                    x += view_width * 5 // 6
+                    y += view_height * 5 // 6
+
+            self._move_target.x = x
+            self._move_target.y = y
 
     def _update_engine(self, game: 'Game') -> None:
         self_pos = Vector2(self.x, self.y)
@@ -116,7 +123,7 @@ class EnemyShip(FlightCollisionSprite):
                 if target_distance >= 10.0:
                     self._move_state = EnemyShip.MoveState.MovingToTarget
                 else:
-                    self._move_target = self._calc_move_target(game)
+                    self._update_move_target(game)
                     self._move_state = EnemyShip.MoveState.MovingToTarget
 
             case _:
