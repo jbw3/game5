@@ -648,27 +648,32 @@ class Game:
         flight_view_size = self._flight_view_surface.get_size()
         flight_view_width, _ = flight_view_size
 
+        wave_mod = (self._wave - 1) % 5
+
+        hold_position_delay = 5.0 - wave_mod
+
         if self._wave == 1:
             initial_fire_delay = 6.0
         else:
             initial_fire_delay = 3.0
 
-        laser_delay = max(1.0, 3.5 - (self._wave * 0.5))
+        laser_delay = 3.0 - wave_mod * 0.5
 
-        if self._wave <= 2:
+        if wave_mod == 0:
             max_aiming_iterations = 0
-        elif self._wave <= 5:
+        elif wave_mod <= 2:
             max_aiming_iterations = 1
         else:
             max_aiming_iterations = 5
 
         config = EnemyShipConfig(
+            hold_position_delay=hold_position_delay,
             initial_fire_delay=initial_fire_delay,
             laser_delay=laser_delay,
             max_aiming_iterations=max_aiming_iterations,
         )
 
-        self._enemy_count = self._wave // 5 + 1
+        self._enemy_count = (self._wave - 1) // 5 + 1
 
         x = flight_view_width//2 - self._enemy_count//2 * 40
         y = 30

@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class EnemyShipConfig:
+    hold_position_delay: float # seconds
     initial_fire_delay: float # seconds
     laser_delay: float # seconds
     max_aiming_iterations: int
@@ -48,6 +49,8 @@ class EnemyShip(FlightCollisionSprite):
 
         self._hull = 3
 
+        self._hold_position_timer = 0.0
+        self._hold_position_delay = config.hold_position_delay
         self._move_state = EnemyShip.MoveState.MovingToTarget
         self._move_target = Vector2(self._x, self._y)
         self._update_move_target(game)
@@ -61,6 +64,10 @@ class EnemyShip(FlightCollisionSprite):
 
     @override
     def update(self, game: 'Game') -> None:
+        self._hold_position_timer = max(0.0, self._hold_position_timer - game.frame_time)
+        self._initial_fire_timer = max(0.0, self._initial_fire_timer - game.frame_time)
+        self._laser_fire_timer = max(0.0, self._laser_fire_timer - game.frame_time)
+
         self._update_engine(game)
         self._update_weapon(game)
 
@@ -70,9 +77,9 @@ class EnemyShip(FlightCollisionSprite):
         old_move_target = self._move_target.copy()
 
         # pick a new move target that is not too close to the current one
-        while self._move_target.distance_to(old_move_target) <= 100.0:
-            x = random.randint(-20, 20)
-            y = random.randint(-30, 30)
+        while self._move_target.distance_to(old_move_target) <= 150.0:
+            x = random.randint(-40, 40)
+            y = random.randint(-50, 50)
 
             match random.randint(0, 3):
                 case 0:
@@ -100,6 +107,7 @@ class EnemyShip(FlightCollisionSprite):
         match self._move_state:
             case EnemyShip.MoveState.MovingToTarget:
                 if target_distance < 10.0 and self_vel.magnitude() < 0.5:
+                    self._hold_position_timer = self._hold_position_delay
                     self._move_state = EnemyShip.MoveState.HoldingAtTarget
                 else:
                     max_target_vel = 300.0
@@ -122,7 +130,7 @@ class EnemyShip(FlightCollisionSprite):
             case EnemyShip.MoveState.HoldingAtTarget:
                 if target_distance >= 10.0:
                     self._move_state = EnemyShip.MoveState.MovingToTarget
-                else:
+                elif self._hold_position_timer <= 0.0:
                     self._update_move_target(game)
                     self._move_state = EnemyShip.MoveState.MovingToTarget
 
@@ -135,7 +143,6 @@ class EnemyShip(FlightCollisionSprite):
         self._aim_sprite.origin = self.rect.center
 
     def _update_weapon(self, game: 'Game') -> None:
-        self._initial_fire_timer = max(0.0, self._initial_fire_timer - game.frame_time)
         if game.ship is None or self._initial_fire_timer > 0.0:
             return
 
@@ -159,7 +166,6 @@ class EnemyShip(FlightCollisionSprite):
 
         # fire
 
-        self._laser_fire_timer = max(0.0, self._laser_fire_timer - game.frame_time)
         angle_diff = (self._target_angle - self._aim_angle) % 360.0
         if angle_diff < 0.5:
             self.fire_laser(game)
