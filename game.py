@@ -791,7 +791,8 @@ class Game:
                     self._reset_game()
 
                 case Game.START_WAVE_EVENT:
-                    self._start_wave()
+                    if self._state == Game.State.Mission:
+                        self._start_wave()
 
         return quit_game
 
