@@ -91,14 +91,15 @@ class OptionsMenu:
     def update(self, game: 'Game') -> None:
         if self._controller is not None:
             # check if selected option is changing
-            axis = self._controller.get_move_y_axis()
-            if abs(axis) < 0.001:
+            is_up = self._controller.get_menu_up()
+            is_down = self._controller.get_menu_down()
+            if not is_up and not is_down:
                 self._axis_was_centered = True
             elif self._axis_was_centered:
                 self._axis_was_centered = False
-                if axis < 0.0 and self._option_index > 0:
+                if is_up and self._option_index > 0:
                     self._option_index -= 1
-                elif axis > 0.0 and self._option_index < len(self._options_sprites) - 1:
+                elif is_down and self._option_index < len(self._options_sprites) - 1:
                     self._option_index += 1
                 self._update_options()
 
@@ -184,14 +185,15 @@ class SetupMenu:
             if self._num_players == 0:
                 self._num_players = 1
 
-            axis = controller.get_move_x_axis()
-            if abs(axis) < 0.001:
+            is_left = controller.get_menu_left()
+            is_right = controller.get_menu_right()
+            if not is_left and not is_right:
                 self._axis_was_centered = True
             elif self._axis_was_centered:
                 self._axis_was_centered = False
-                if axis < 0.0:
+                if is_left:
                     self._setup_option_decrement(game)
-                elif axis > 0.0:
+                elif is_right:
                     self._setup_option_increment(game)
 
             if self._button_was_released:

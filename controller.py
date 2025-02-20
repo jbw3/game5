@@ -52,3 +52,15 @@ class Controller:
             if self._joystick.get_button(button):
                 return True
         return False
+
+    def get_menu_left(self) -> bool:
+        return self._joystick.get_axis(0) < -0.6
+
+    def get_menu_right(self) -> bool:
+        return self._joystick.get_axis(0) > 0.6
+
+    def get_menu_up(self) -> bool:
+        return self._joystick.get_axis(1) < -0.6
+
+    def get_menu_down(self) -> bool:
+        return self._joystick.get_axis(1) > 0.6
