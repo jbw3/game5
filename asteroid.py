@@ -81,8 +81,11 @@ class Asteroid(FlightCollisionSprite):
             self.rect.left = flight_view_size[0]
             self._x = float(self.rect.centerx)
 
+        # we're not using this, but we should clear it each update so it won't keep filling up
+        self.collided_this_update.clear()
+
     @override
-    def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
+    def on_collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         self._dx = new_dx
         self._dy = new_dy
 

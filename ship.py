@@ -507,71 +507,16 @@ class Ship(FlightCollisionSprite):
         for aiming in self._aiming:
             aiming.origin = self.rect.center
 
-        collision = False
-        total_force = 0.0
-        for sprite in pygame.sprite.spritecollide(self, game.flight_collision_sprites, False):
-            if sprite is self:
-                continue
-
-            # elastic collision equations
-
-            # use sprite area as "mass"
-            my_mass = self.rect.width * self.rect.height
-            other_mass = sprite.rect.width * sprite.rect.height
-            mass_sum = my_mass + other_mass
-
-            # rotate velocities so collision can be calculated for x component
-            angle = math.atan2(sprite.y - self._y, sprite.x - self._x)
-            sin_angle = math.sin(angle)
-            cos_angle = math.cos(angle)
-            my_vx = self._dx * cos_angle - self._dy * sin_angle
-            my_vy = self._dx * sin_angle + self._dy * cos_angle
-            other_vx = sprite.dx * cos_angle - sprite.dy * sin_angle
-            other_vy = sprite.dx * sin_angle + sprite.dy * cos_angle
-
-            # calculate new x components
-            my_new_vx = (my_mass - other_mass) / mass_sum * my_vx + 2 * other_mass / mass_sum * other_vx
-            other_new_vx = 2 * my_mass / mass_sum * my_vx + (other_mass - my_mass) / mass_sum * other_vx
-
-            # rotate the velocity components back
-            sin_negative_angle = math.sin(-angle)
-            cos_negative_angle = math.cos(-angle)
-            self._dx = my_new_vx * cos_negative_angle - my_vy * sin_negative_angle
-            self._dy = my_new_vx * sin_negative_angle + my_vy * cos_negative_angle
-            other_dx = other_new_vx * cos_negative_angle - other_vy * sin_negative_angle
-            other_dy = other_new_vx * sin_negative_angle + other_vy * cos_negative_angle
-
-            force = my_mass * abs(my_new_vx - my_vx)
-            total_force += force
-
-            sprite.collide(game, other_dx, other_dy, force)
-            collision = True
-
-            my_x = self.rect.x
-            my_y = self.rect.y
-            other_x = sprite.rect.x
-            other_y = sprite.rect.y
-            if abs(other_x - my_x) < abs(other_y - my_y):
-                if my_y < other_y:
-                    self.rect.bottom = sprite.rect.top
-                else:
-                    self.rect.top = sprite.rect.bottom
-                self._y = float(self.rect.centery)
-            else:
-                if my_x < other_x:
-                    self.rect.right = sprite.rect.left
-                else:
-                    self.rect.left = sprite.rect.right
-                self._x = float(self.rect.centerx)
-
-        if collision:
-            hit_points = int(total_force / 20_000)
-            self._logger.info(f'Collision: total force: {total_force:.1f}, hit points: {hit_points}')
-            self.damage(game, hit_points)
+        self.check_collision(game)
 
     @override
-    def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
-        pass
+    def on_collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
+        self._dx = new_dx
+        self._dy = new_dy
+
+        hit_points = int(force / 20_000)
+        self._logger.info(f'Collision: total force: {force:.1f}, hit points: {hit_points}')
+        self.damage(game, hit_points)
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:

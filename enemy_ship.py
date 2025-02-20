@@ -71,6 +71,8 @@ class EnemyShip(FlightCollisionSprite):
         self._update_engine(game)
         self._update_weapon(game)
 
+        self.check_collision(game)
+
     def _update_move_target(self, game: 'Game') -> None:
         view_width, view_height = game.flight_view_size
 
@@ -198,18 +200,16 @@ class EnemyShip(FlightCollisionSprite):
             self._laser_fire_timer = self._laser_delay
 
     @override
-    def collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
+    def on_collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
         self._dx = new_dx
         self._dy = new_dy
 
         hit_points = int(force / 20_000)
-        self._hull -= min(self._hull, hit_points)
-        if self._hull <= 0:
-            self.destroy(game)
+        self.damage(game, hit_points)
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:
-        self._hull -= hit_points
+        self._hull = max(0, self._hull - hit_points)
         if self._hull <= 0:
             self.destroy(game)
 
