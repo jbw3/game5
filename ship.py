@@ -102,10 +102,11 @@ class WeaponConsole(Console):
             controller = self._person.controller
 
             a0 = controller.get_move_x_axis()
+            fast = controller.get_fast_button()
             if a0 < 0.0:
-                ship.rotate_aim_counterclockwise(self._weapon_index)
+                ship.rotate_aim_counterclockwise(self._weapon_index, fast)
             elif a0 > 0.0:
-                ship.rotate_aim_clockwise(self._weapon_index)
+                ship.rotate_aim_clockwise(self._weapon_index, fast)
 
             if controller.get_trigger_button():
                 ship.fire_laser(self._weapon_index)
@@ -181,7 +182,8 @@ class WeaponSystemConsole(Console):
 class Ship(FlightCollisionSprite):
     MAX_ACCELERATION = 5.0
     LASER_DELAY = 0.5 # seconds
-    AIM_ANGLE_RATE = 120.0 # degrees
+    AIM_ANGLE_SLOW_RATE = 60.0 # degrees/second
+    AIM_ANGLE_FAST_RATE = 120.0 # degrees/second
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
     WALL_WIDTH = 10
@@ -463,11 +465,19 @@ class Ship(FlightCollisionSprite):
     def disable_aiming(self, weapon_index: int) -> None:
         self.game.flight_view_sprites.remove(self._aiming[weapon_index])
 
-    def rotate_aim_clockwise(self, weapon_index: int) -> None:
-        self._aiming[weapon_index].angle -= Ship.AIM_ANGLE_RATE * self.game.frame_time
+    def rotate_aim_clockwise(self, weapon_index: int, fast: bool) -> None:
+        if fast:
+            rate = Ship.AIM_ANGLE_FAST_RATE
+        else:
+            rate = Ship.AIM_ANGLE_SLOW_RATE
+        self._aiming[weapon_index].angle -= rate * self.game.frame_time
 
-    def rotate_aim_counterclockwise(self, weapon_index: int) -> None:
-        self._aiming[weapon_index].angle += Ship.AIM_ANGLE_RATE * self.game.frame_time
+    def rotate_aim_counterclockwise(self, weapon_index: int, fast: bool) -> None:
+        if fast:
+            rate = Ship.AIM_ANGLE_FAST_RATE
+        else:
+            rate = Ship.AIM_ANGLE_SLOW_RATE
+        self._aiming[weapon_index].angle += rate * self.game.frame_time
 
     def fire_laser(self, weapon_index: int) -> None:
         if self._weapon_enabled[weapon_index]:
