@@ -657,7 +657,7 @@ class Game:
         else:
             initial_fire_delay = 3.0
 
-        laser_delay = 3.0 - wave_mod * 0.5
+        laser_delay = 5.0 - wave_mod
 
         if wave_mod == 0:
             max_aiming_iterations = 0
