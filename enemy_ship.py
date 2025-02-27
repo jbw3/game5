@@ -35,8 +35,6 @@ class EnemyShip(FlightCollisionSprite):
         self._logger = logging.getLogger('EnemyShip')
         image = game.resource_loader.load_image('enemy_ship1.png')
         super().__init__(image, x, y, 0.0, 0.0)
-        self._x = float(x)
-        self._y = float(y)
         self.rect.center = (int(x), int(y))
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -52,7 +50,7 @@ class EnemyShip(FlightCollisionSprite):
         self._hold_position_timer = 0.0
         self._hold_position_delay = config.hold_position_delay
         self._move_state = EnemyShip.MoveState.MovingToTarget
-        self._move_target = Vector2(self._x, self._y)
+        self._move_target = Vector2(self.x, self.y)
         self._update_move_target(game)
 
         self._aim_angle = 90.0
@@ -126,8 +124,8 @@ class EnemyShip(FlightCollisionSprite):
                     if accel.magnitude() > EnemyShip.MAX_ACCELERATION:
                         accel = accel.normalize() * EnemyShip.MAX_ACCELERATION
 
-                    self._dx += accel.x
-                    self._dy += accel.y
+                    self.dx += accel.x
+                    self.dy += accel.y
 
             case EnemyShip.MoveState.HoldingAtTarget:
                 if target_distance >= 10.0:
@@ -139,9 +137,9 @@ class EnemyShip(FlightCollisionSprite):
             case _:
                 assert False, f'Unknown move state: {self._move_state}'
 
-        self._x += self._dx * game.frame_time
-        self._y += self._dy * game.frame_time
-        self.rect.center = (int(self._x), int(self._y))
+        self.x += self.dx * game.frame_time
+        self.y += self.dy * game.frame_time
+        self.rect.center = (int(self.x), int(self.y))
         self._aim_sprite.origin = self.rect.center
 
     def _update_weapon(self, game: 'Game') -> None:
@@ -201,8 +199,8 @@ class EnemyShip(FlightCollisionSprite):
 
     @override
     def on_collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
-        self._dx = new_dx
-        self._dy = new_dy
+        self.dx = new_dx
+        self.dy = new_dy
 
         hit_points = int(force / 20_000)
         self.damage(game, hit_points)

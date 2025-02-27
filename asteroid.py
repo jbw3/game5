@@ -58,36 +58,21 @@ class Asteroid(FlightCollisionSprite):
 
     @override
     def update(self, game: 'Game') -> None:
-        self._x += self._dx * game.frame_time
-        self._y += self._dy * game.frame_time
+        self.x += self.dx * game.frame_time
+        self.y += self.dy * game.frame_time
 
-        self.rect.center = (int(self._x), int(self._y))
+        self.rect.center = (int(self.x), int(self.y))
 
-        flight_view_size = game.flight_view_size
-
-        # wrap around if the asteroid goes past the top or bottom of the screen
-        if self.rect.top >= flight_view_size[1]:
-            self.rect.bottom = 0
-            self._y = float(self.rect.centery)
-        elif self.rect.bottom <= 0:
-            self.rect.top = flight_view_size[1]
-            self._y = float(self.rect.centery)
-
-        # wrap around if the asteroid goes past the left or right of the screen
-        if self.rect.left >= flight_view_size[0]:
-            self.rect.right = 0
-            self._x = float(self.rect.centerx)
-        elif self.rect.right <= 0:
-            self.rect.left = flight_view_size[0]
-            self._x = float(self.rect.centerx)
+        # wrap around if the asteroid goes past the bounds of the view
+        self.wrap(game.flight_view_size)
 
         # we're not using this, but we should clear it each update so it won't keep filling up
         self.collided_this_update.clear()
 
     @override
     def on_collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
-        self._dx = new_dx
-        self._dy = new_dy
+        self.dx = new_dx
+        self.dy = new_dy
 
         if ((self._size == Asteroid.Size.Small and force >= 125_000) or
             (self._size == Asteroid.Size.Medium and force >= 250_000) or

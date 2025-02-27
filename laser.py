@@ -20,22 +20,22 @@ class Laser(Sprite):
 
         game.flight_view_sprites.add(self)
 
-        self._x = float(center[0])
-        self._y = float(center[1])
+        self.x = float(center[0])
+        self.y = float(center[1])
 
-        self._dx = Laser.SPEED * math.cos(math.radians(angle))
-        self._dy = Laser.SPEED * math.sin(math.radians(-angle))
+        self.dx = Laser.SPEED * math.cos(math.radians(angle))
+        self.dy = Laser.SPEED * math.sin(math.radians(-angle))
 
     @override
     def update(self, game: 'Game') -> None:
-        self._x += self._dx * game.frame_time
-        self._y += self._dy * game.frame_time
+        self.x += self.dx * game.frame_time
+        self.y += self.dy * game.frame_time
 
-        self.rect.center = (int(self._x), int(self._y))
+        self.rect.center = (int(self.x), int(self.y))
 
         # remove laser when it goes beyond the bounds of the view
         view_width, view_height = game.flight_view_size
-        if self._x < 0.0 or self._x >= view_width or self._y < 0.0 or self._y >= view_height:
+        if self.x < 0.0 or self.x >= view_width or self.y < 0.0 or self.y >= view_height:
             game.flight_view_sprites.remove(self)
 
         collide_sprites = pygame.sprite.spritecollide(self, game.flight_collision_sprites, False, pygame.sprite.collide_mask)

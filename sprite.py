@@ -22,30 +22,35 @@ class Sprite(pygame.sprite.DirtySprite):
         self.rect = self._image.get_rect()
         self.rect.topleft = old_topleft
 
-class FlightCollisionSprite(Sprite):
+class WrappingSprite(Sprite):
     def __init__(self, image: pygame.surface.Surface, x: float=0.0, y: float=0.0, dx: float=0.0, dy: float=0.0):
-        super().__init__(image)
-        self._x = x
-        self._y = y
-        self._dx = dx
-        self._dy = dy
+            super().__init__(image)
+            self.x = x
+            self.y = y
+            self.dx = dx
+            self.dy = dy
+
+    def wrap(self, view_size: tuple[int, int]) -> None:
+        # wrap around if the sprite goes past the top or bottom of the screen
+        if self.rect.top >= view_size[1]:
+            self.rect.bottom = 0
+            self.y = float(self.rect.centery)
+        elif self.rect.bottom <= 0:
+            self.rect.top = view_size[1]
+            self.y = float(self.rect.centery)
+
+        # wrap around if the sprite goes past the left or right of the screen
+        if self.rect.left >= view_size[0]:
+            self.rect.right = 0
+            self.x = float(self.rect.centerx)
+        elif self.rect.right <= 0:
+            self.rect.left = view_size[0]
+            self.x = float(self.rect.centerx)
+
+class FlightCollisionSprite(WrappingSprite):
+    def __init__(self, image: pygame.surface.Surface, x: float=0.0, y: float=0.0, dx: float=0.0, dy: float=0.0):
+        super().__init__(image, x, y, dx, dy)
         self.collided_this_update: list[FlightCollisionSprite] = []
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @property
-    def y(self) -> float:
-        return self._y
-
-    @property
-    def dx(self) -> float:
-        return self._dx
-
-    @property
-    def dy(self) -> float:
-        return self._dy
 
     def check_collision(self, game: 'Game') -> None:
         for sprite in pygame.sprite.spritecollide(self, game.flight_collision_sprites, False): # type: ignore
@@ -65,11 +70,11 @@ class FlightCollisionSprite(Sprite):
             mass_sum = my_mass + other_mass
 
             # rotate velocities so collision can be calculated for x component
-            angle = math.atan2(sprite.y - self._y, sprite.x - self._x)
+            angle = math.atan2(sprite.y - self.y, sprite.x - self.x)
             sin_angle = math.sin(angle)
             cos_angle = math.cos(angle)
-            my_vx = self._dx * cos_angle - self._dy * sin_angle
-            my_vy = self._dx * sin_angle + self._dy * cos_angle
+            my_vx = self.dx * cos_angle - self.dy * sin_angle
+            my_vy = self.dx * sin_angle + self.dy * cos_angle
             other_vx = sprite.dx * cos_angle - sprite.dy * sin_angle
             other_vy = sprite.dx * sin_angle + sprite.dy * cos_angle
 
@@ -80,15 +85,15 @@ class FlightCollisionSprite(Sprite):
             # rotate the velocity components back
             sin_negative_angle = math.sin(-angle)
             cos_negative_angle = math.cos(-angle)
-            self._dx = my_new_vx * cos_negative_angle - my_vy * sin_negative_angle
-            self._dy = my_new_vx * sin_negative_angle + my_vy * cos_negative_angle
+            self.dx = my_new_vx * cos_negative_angle - my_vy * sin_negative_angle
+            self.dy = my_new_vx * sin_negative_angle + my_vy * cos_negative_angle
             other_dx = other_new_vx * cos_negative_angle - other_vy * sin_negative_angle
             other_dy = other_new_vx * sin_negative_angle + other_vy * cos_negative_angle
 
             force = my_mass * abs(my_new_vx - my_vx)
 
             sprite.on_collide(game, other_dx, other_dy, force)
-            self.on_collide(game, self._dx, self._dy, force)
+            self.on_collide(game, self.dx, self.dy, force)
             sprite.collided_this_update.append(self) # type: ignore
 
             my_x = self.rect.x
@@ -100,13 +105,13 @@ class FlightCollisionSprite(Sprite):
                     self.rect.bottom = sprite.rect.top
                 else:
                     self.rect.top = sprite.rect.bottom
-                self._y = float(self.rect.centery)
+                self.y = float(self.rect.centery)
             else:
                 if my_x < other_x:
                     self.rect.right = sprite.rect.left
                 else:
                     self.rect.left = sprite.rect.right
-                self._x = float(self.rect.centerx)
+                self.x = float(self.rect.centerx)
 
         self.collided_this_update.clear()
 

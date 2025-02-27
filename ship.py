@@ -213,9 +213,9 @@ class Ship(FlightCollisionSprite):
         game.flight_collision_sprites.add(self)
 
         # start ship with a small, random velocity
-        while (self._dx**2 + self._dy**2)**0.5 < 1.0:
-            self._dx = random.random() * 10 - 5
-            self._dy = random.random() * 10 - 5
+        while (self.dx**2 + self.dy**2)**0.5 < 1.0:
+            self.dx = random.random() * 10 - 5
+            self.dy = random.random() * 10 - 5
 
         self._num_weapons = 2
         self._laser_fire_timers = [0.0, 0.0]
@@ -432,8 +432,8 @@ class Ship(FlightCollisionSprite):
 
     def accelerate(self, x_accel: float, y_accel: float) -> None:
         if self._engine_enabled:
-            self._dx += x_accel
-            self._dy += y_accel
+            self.dx += x_accel
+            self.dy += y_accel
 
     def enable_engine(self) -> None:
         self._engine_enabled = True
@@ -493,26 +493,26 @@ class Ship(FlightCollisionSprite):
         for console in self._consoles:
             console.update_ship(game, self)
 
-        self._x += self._dx * game.frame_time
-        self._y += self._dy * game.frame_time
+        self.x += self.dx * game.frame_time
+        self.y += self.dy * game.frame_time
 
-        self.rect.center = (int(self._x), int(self._y))
+        self.rect.center = (int(self.x), int(self.y))
 
         # wrap around if the ship goes past the top or bottom of the screen
         if self.rect.top >= game.flight_view_size[1]:
             self.rect.bottom = 0
-            self._y = float(self.rect.centery)
+            self.y = float(self.rect.centery)
         elif self.rect.bottom <= 0:
             self.rect.top = game.flight_view_size[1]
-            self._y = float(self.rect.centery)
+            self.y = float(self.rect.centery)
 
         # wrap around if the ship goes past the left or right of the screen
         if self.rect.left >= game.flight_view_size[0]:
             self.rect.right = 0
-            self._x = float(self.rect.centerx)
+            self.x = float(self.rect.centerx)
         elif self.rect.right <= 0:
             self.rect.left = game.flight_view_size[0]
-            self._x = float(self.rect.centerx)
+            self.x = float(self.rect.centerx)
 
         for aiming in self._aiming:
             aiming.origin = self.rect.center
@@ -521,8 +521,8 @@ class Ship(FlightCollisionSprite):
 
     @override
     def on_collide(self, game: 'Game', new_dx: float, new_dy: float, force: float) -> None:
-        self._dx = new_dx
-        self._dy = new_dy
+        self.dx = new_dx
+        self.dy = new_dy
 
         hit_points = int(force / 20_000)
         self._logger.info(f'Collision: total force: {force:.1f}, hit points: {hit_points}')

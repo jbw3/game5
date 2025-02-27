@@ -29,8 +29,8 @@ class Person(Animation):
         self.rect.center = center
         self.dirty = 1
 
-        self._x = float(center[0])
-        self._y = float(center[1])
+        self.x = float(center[0])
+        self.y = float(center[1])
 
         game.interior_view_sprites.add(self)
         game.interior_solid_sprites.add(self)
@@ -64,25 +64,25 @@ class Person(Animation):
         magnitude = min(1.0, math.sqrt(x_axis**2 + y_axis**2))
         speed = Person.MAX_SPEED * magnitude * game.frame_time
 
-        self._x += speed * math.cos(angle)
-        self._y += speed * math.sin(angle)
+        self.x += speed * math.cos(angle)
+        self.y += speed * math.sin(angle)
 
-        self.rect.center = (int(self._x), int(self._y))
+        self.rect.center = (int(self.x), int(self.y))
 
         for sprite in pygame.sprite.spritecollide(self, game.interior_solid_sprites, False):
             if last_rect.top >= sprite.rect.bottom:
                 self.rect.top = sprite.rect.bottom
-                self._y = float(self.rect.centery)
+                self.y = float(self.rect.centery)
             elif last_rect.bottom <= sprite.rect.top:
                 self.rect.bottom = sprite.rect.top
-                self._y = float(self.rect.centery)
+                self.y = float(self.rect.centery)
 
             if last_rect.left >= sprite.rect.right:
                 self.rect.left = sprite.rect.right
-                self._x = float(self.rect.centerx)
+                self.x = float(self.rect.centerx)
             elif last_rect.right <= sprite.rect.left:
                 self.rect.right = sprite.rect.left
-                self._x = float(self.rect.centerx)
+                self.x = float(self.rect.centerx)
 
         if self._controller.get_activate_button():
             if game.ship.try_activate_console(self):
@@ -90,8 +90,8 @@ class Person(Animation):
                 old_bottom = self.rect.bottom
                 self.set_images(self._control_images, period=300, loop=True)
                 self.rect.bottom = old_bottom
-                self._x = float(self.rect.centerx)
-                self._y = float(self.rect.centery)
+                self.x = float(self.rect.centerx)
+                self.y = float(self.rect.centery)
 
         if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
             self.dirty = 1
