@@ -19,12 +19,20 @@ class MoveDetectionSprite(Sprite):
     LENGTH = 175
 
     def __init__(self, origin: tuple[int, int]):
-        height = 40
-        self._orig_image = pygame.surface.Surface((MoveDetectionSprite.LENGTH, height))
+        height1 = 40
+        height2 = 80
+        self._orig_image = pygame.surface.Surface((MoveDetectionSprite.LENGTH, height2))
         self._orig_image.fill((0, 0, 0))
         self._orig_image.set_colorkey((0, 0, 0))
         self._orig_image.set_alpha(130)
-        pygame.draw.rect(self._orig_image, (0, 50, 255), (1, 0, MoveDetectionSprite.LENGTH-2, height))
+        y1 = (height2 - height1) // 2
+        points = [
+            (0, y1),
+            (MoveDetectionSprite.LENGTH - 1, 0),
+            (MoveDetectionSprite.LENGTH - 1, height2 - 1),
+            (0, y1 + height1),
+        ]
+        pygame.draw.polygon(self._orig_image, (0, 50, 255), points)
         super().__init__(self._orig_image)
 
         self._origin = origin
