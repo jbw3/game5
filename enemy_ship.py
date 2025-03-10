@@ -10,10 +10,53 @@ from typing import TYPE_CHECKING, override
 from aim_sprite import AimSprite
 from animation import ShipExplosionAnimation
 from laser import Laser
-from sprite import FlightCollisionSprite
+from sprite import FlightCollisionSprite, Sprite
 
 if TYPE_CHECKING:
     from game import Game
+
+class MoveDetectionSprite(Sprite):
+    LENGTH = 175
+
+    def __init__(self, origin: tuple[int, int]):
+        height = 40
+        self._orig_image = pygame.surface.Surface((MoveDetectionSprite.LENGTH, height))
+        self._orig_image.fill((0, 0, 0))
+        self._orig_image.set_colorkey((0, 0, 0))
+        self._orig_image.set_alpha(130)
+        pygame.draw.rect(self._orig_image, (0, 50, 255), (1, 0, MoveDetectionSprite.LENGTH-2, height))
+        super().__init__(self._orig_image)
+
+        self._origin = origin
+        self.angle = 90.0
+
+    @property
+    def angle(self) -> float:
+        return self._angle
+
+    @angle.setter
+    def angle(self, new_angle: float) -> None:
+        self._angle = new_angle % 360.0
+
+        self.image = pygame.transform.rotate(self._orig_image, new_angle)
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        self._update_position()
+
+    @property
+    def origin(self) -> tuple[int, int]:
+        return self._origin
+
+    @origin.setter
+    def origin(self, new_origin: tuple[int, int]) -> None:
+        self._origin = new_origin
+        self._update_position()
+
+    def _update_position(self) -> None:
+        offset = MoveDetectionSprite.LENGTH / 2
+        x = self.origin[0] + offset * math.cos(math.radians(self.angle))
+        y = self.origin[1] + offset * -math.sin(math.radians(self.angle))
+        self.rect.center = (int(x), int(y))
 
 @dataclass
 class EnemyShipConfig:
@@ -30,6 +73,7 @@ class EnemyShip(FlightCollisionSprite):
     class MoveState(Enum):
         MovingToTarget = 0
         HoldingAtTarget = 1
+        AvoidingCollision = 2
 
     def __init__(self, game: 'Game', x: float, y: float, config: EnemyShipConfig):
         self._logger = logging.getLogger('EnemyShip')
@@ -41,11 +85,14 @@ class EnemyShip(FlightCollisionSprite):
         game.flight_view_sprites.add(self)
         game.flight_collision_sprites.add(self)
 
+        self._move_detection_sprite = MoveDetectionSprite(self.rect.center)
         self._aim_sprite = AimSprite((240, 0, 0), self.rect.center)
         if game.debug:
+            game.flight_view_sprites.add(self._move_detection_sprite)
             game.flight_view_sprites.add(self._aim_sprite)
 
         self._hull = 3
+        self._target_vel = Vector2(0.0, 0.0)
 
         self._hold_position_timer = 0.0
         self._hold_position_delay = config.hold_position_delay
@@ -101,46 +148,71 @@ class EnemyShip(FlightCollisionSprite):
     def _update_engine(self, game: 'Game') -> None:
         self_pos = Vector2(self.x, self.y)
         self_vel = Vector2(self.dx, self.dy)
+        self_vel_mag = self_vel.magnitude()
         target_distance = self_pos.distance_to(self._move_target)
         self._logger.debug(f'move target distance: {target_distance}')
 
+        if self_vel_mag > 0.1:
+            self._move_detection_sprite.angle = math.degrees(math.atan2(-self.dy, self.dx))
+
+        move_collision = False
+        collide_sprites = pygame.sprite.spritecollide(self._move_detection_sprite, game.flight_collision_sprites, False, pygame.sprite.collide_mask)
+        for sprite in collide_sprites:
+            if sprite is not self:
+                move_collision = True
+                break
+
         match self._move_state:
             case EnemyShip.MoveState.MovingToTarget:
-                if target_distance < 10.0 and self_vel.magnitude() < 0.5:
+                if target_distance < 10.0 and self_vel_mag < 0.5:
                     self._hold_position_timer = self._hold_position_delay
                     self._move_state = EnemyShip.MoveState.HoldingAtTarget
                 else:
                     max_target_vel = 300.0
                     target_vel_unit = (self._move_target - self_pos).normalize()
-                    target_vel: Vector2
-                    if target_distance < 10.0:
-                        target_vel = Vector2(0.0, 0.0)
+
+                    if move_collision and self_vel_mag > 0.1:
+                        self._target_vel = Vector2(0.0, 0.0)
+                        self._move_state = EnemyShip.MoveState.AvoidingCollision
+                    elif target_distance < 10.0:
+                        self._target_vel = Vector2(0.0, 0.0)
                     elif target_distance < 150.0:
-                        target_vel = (target_distance / 150.0) * max_target_vel * target_vel_unit
+                        self._target_vel = (target_distance / 150.0) * max_target_vel * target_vel_unit
                     else:
-                        target_vel = max_target_vel * target_vel_unit
-
-                    accel = target_vel - self_vel
-                    if accel.magnitude() > EnemyShip.MAX_ACCELERATION:
-                        accel = accel.normalize() * EnemyShip.MAX_ACCELERATION
-
-                    self.dx += accel.x
-                    self.dy += accel.y
+                        self._target_vel = max_target_vel * target_vel_unit
 
             case EnemyShip.MoveState.HoldingAtTarget:
+                self._target_vel = Vector2(0.0, 0.0)
                 if target_distance >= 10.0:
                     self._move_state = EnemyShip.MoveState.MovingToTarget
                 elif self._hold_position_timer <= 0.0:
                     self._update_move_target(game)
                     self._move_state = EnemyShip.MoveState.MovingToTarget
 
+            case EnemyShip.MoveState.AvoidingCollision:
+                self._target_vel = Vector2(0.0, 0.0)
+                if not move_collision:
+                    self._move_state = EnemyShip.MoveState.MovingToTarget
+                elif self_vel_mag < 0.1:
+                    # pick a new move target
+                    self._update_move_target(game)
+                    self._move_state = EnemyShip.MoveState.MovingToTarget
+
             case _:
                 assert False, f'Unknown move state: {self._move_state}'
+
+        accel = self._target_vel - self_vel
+        if accel.magnitude() > EnemyShip.MAX_ACCELERATION:
+            accel = accel.normalize() * EnemyShip.MAX_ACCELERATION
+
+        self.dx += accel.x
+        self.dy += accel.y
 
         self.x += self.dx * game.frame_time
         self.y += self.dy * game.frame_time
         self.rect.center = (int(self.x), int(self.y))
         self._aim_sprite.origin = self.rect.center
+        self._move_detection_sprite.origin = self.rect.center
 
     def _update_weapon(self, game: 'Game') -> None:
         if game.ship is None or self._initial_fire_timer > 0.0:
@@ -215,6 +287,7 @@ class EnemyShip(FlightCollisionSprite):
         # remove from all sprite groups
         self.kill()
         self._aim_sprite.kill()
+        self._move_detection_sprite.kill()
 
         # create explosion graphic
         ShipExplosionAnimation(game, self.rect.center)
