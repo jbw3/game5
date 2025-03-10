@@ -128,8 +128,7 @@ class SetupMenu:
         setup_options = [
             f'Players: {self._num_players}',
         ]
-        if game.debug:
-            setup_options.append(f'Mode: {game_mode_to_str(game.mode)}')
+        setup_options.append(f'Mode: {game_mode_to_str(game.mode)}')
         self._setup_options = OptionsMenu(setup_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
 
         self._state = SetupMenu.State.Start
