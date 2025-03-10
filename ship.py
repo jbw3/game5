@@ -139,6 +139,12 @@ class EngineConsole(Console):
         super().activate(ship, person)
         ship.enable_engine()
 
+    @override
+    def update_ship(self, game: 'Game', ship: 'Ship') -> None:
+        if self._person is not None:
+            if not ship.get_engine_enabled():
+                ship.enable_engine()
+
     def set_error(self, game: 'Game', is_error: bool) -> None:
         old_rect = self.rect.copy()
 
@@ -167,6 +173,12 @@ class WeaponSystemConsole(Console):
     def activate(self, ship: 'Ship', person: Person) -> None:
         super().activate(ship, person)
         ship.enable_weapon(self._weapon_index)
+
+    @override
+    def update_ship(self, game: 'Game', ship: 'Ship') -> None:
+        if self._person is not None:
+            if not ship.get_weapon_enabled(self._weapon_index):
+                ship.enable_weapon(self._weapon_index)
 
     def set_error(self, game: 'Game', is_error: bool) -> None:
         old_rect = self.rect.copy()
@@ -405,6 +417,12 @@ class Ship(FlightCollisionSprite):
         self._hull_text.image = self._status_font.render(f'Hull: {self._hull}', True, (252, 10, 30))
         self._hull_text.rect.bottomleft = (10, self.game.interior_view_size[1] - 10)
         self._hull_text.dirty = 1
+
+    def get_engine_enabled(self) -> bool:
+        return self._engine_enabled
+
+    def get_weapon_enabled(self, weapon_index: int) -> bool:
+        return self._weapon_enabled[weapon_index]
 
     def blit_interior_view(self, surface: pygame.surface.Surface) -> None:
         surface.blit(self._background_sprite.image, self._background_sprite.rect)
