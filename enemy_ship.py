@@ -16,23 +16,11 @@ if TYPE_CHECKING:
     from game import Game
 
 class MoveDetectionSprite(Sprite):
-    LENGTH = 175
+    MAX_LENGTH = 300
 
     def __init__(self, origin: tuple[int, int]):
-        height1 = 40
-        height2 = 80
-        self._orig_image = pygame.surface.Surface((MoveDetectionSprite.LENGTH, height2))
-        self._orig_image.fill((0, 0, 0))
-        self._orig_image.set_colorkey((0, 0, 0))
-        self._orig_image.set_alpha(130)
-        y1 = (height2 - height1) // 2
-        points = [
-            (0, y1),
-            (MoveDetectionSprite.LENGTH - 1, 0),
-            (MoveDetectionSprite.LENGTH - 1, height2 - 1),
-            (0, y1 + height1),
-        ]
-        pygame.draw.polygon(self._orig_image, (0, 50, 255), points)
+        self._length = 0
+        self._update_orig_image(MoveDetectionSprite.MAX_LENGTH // 2, 70)
         super().__init__(self._orig_image)
 
         self._origin = origin
@@ -45,11 +33,7 @@ class MoveDetectionSprite(Sprite):
     @angle.setter
     def angle(self, new_angle: float) -> None:
         self._angle = new_angle % 360.0
-
-        self.image = pygame.transform.rotate(self._orig_image, new_angle)
-        self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image)
-        self._update_position()
+        self._rotate()
 
     @property
     def origin(self) -> tuple[int, int]:
@@ -60,11 +44,47 @@ class MoveDetectionSprite(Sprite):
         self._origin = new_origin
         self._update_position()
 
+    def _rotate(self) -> None:
+        self.image = pygame.transform.rotate(self._orig_image, self.angle)
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        self._update_position()
+
+    def _update_orig_image(self, length: int, height2: int) -> None:
+        height1 = 40
+        image = pygame.surface.Surface((length, height2))
+        image.fill((0, 0, 0))
+        image.set_colorkey((0, 0, 0))
+        image.set_alpha(130)
+        y1 = (height2 - height1) // 2
+        points = [
+            (0, y1),
+            (length - 1, 0),
+            (length - 1, height2 - 1),
+            (0, y1 + height1),
+        ]
+        pygame.draw.polygon(image, (0, 50, 255), points)
+
+        self._orig_image = image
+        self._length = length
+
     def _update_position(self) -> None:
-        offset = MoveDetectionSprite.LENGTH / 2
+        offset = self._length / 2
         x = self.origin[0] + offset * math.cos(math.radians(self.angle))
         y = self.origin[1] + offset * -math.sin(math.radians(self.angle))
         self.rect.center = (int(x), int(y))
+
+    def update_vel_proportion(self, proportion: float) -> None:
+        if proportion < 0.5:
+            length = MoveDetectionSprite.MAX_LENGTH // 2
+            height2 = 70
+        else:
+            length = MoveDetectionSprite.MAX_LENGTH
+            height2 = 100
+
+        if self._length != length:
+            self._update_orig_image(length, height2)
+            self._rotate()
 
 @dataclass
 class EnemyShipConfig:
@@ -159,6 +179,7 @@ class EnemyShip(FlightCollisionSprite):
         self_vel_mag = self_vel.magnitude()
         target_distance = self_pos.distance_to(self._move_target)
         self._logger.debug(f'move target distance: {target_distance}')
+        max_target_vel = 300.0
 
         if self_vel_mag > 0.1:
             self._move_detection_sprite.angle = math.degrees(math.atan2(-self.dy, self.dx))
@@ -176,7 +197,6 @@ class EnemyShip(FlightCollisionSprite):
                     self._hold_position_timer = self._hold_position_delay
                     self._move_state = EnemyShip.MoveState.HoldingAtTarget
                 else:
-                    max_target_vel = 300.0
                     target_vel_unit = (self._move_target - self_pos).normalize()
 
                     if move_collision and self_vel_mag > 0.1:
@@ -221,6 +241,7 @@ class EnemyShip(FlightCollisionSprite):
         self.rect.center = (int(self.x), int(self.y))
         self._aim_sprite.origin = self.rect.center
         self._move_detection_sprite.origin = self.rect.center
+        self._move_detection_sprite.update_vel_proportion(Vector2(self.dx, self.dy).magnitude() / max_target_vel)
 
     def _update_weapon(self, game: 'Game') -> None:
         if game.ship is None or self._initial_fire_timer > 0.0:
