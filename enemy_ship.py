@@ -16,11 +16,20 @@ if TYPE_CHECKING:
     from game import Game
 
 class MoveDetectionSprite(Sprite):
+    MIN_LENGTH = 150
     MAX_LENGTH = 300
+    MIN_HEIGHT1 = 50
+    MAX_HEIGHT1 = 65
+    MIN_HEIGHT2 = 75
+    MAX_HEIGHT2 = 100
 
     def __init__(self, origin: tuple[int, int]):
         self._length = 0
-        self._update_orig_image(MoveDetectionSprite.MAX_LENGTH // 2, 70)
+        self._update_orig_image(
+            MoveDetectionSprite.MIN_LENGTH,
+            MoveDetectionSprite.MIN_HEIGHT1,
+            MoveDetectionSprite.MIN_HEIGHT2,
+        )
         super().__init__(self._orig_image)
 
         self._origin = origin
@@ -50,8 +59,7 @@ class MoveDetectionSprite(Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self._update_position()
 
-    def _update_orig_image(self, length: int, height2: int) -> None:
-        height1 = 40
+    def _update_orig_image(self, length: int, height1: int, height2: int) -> None:
         image = pygame.surface.Surface((length, height2))
         image.fill((0, 0, 0))
         image.set_colorkey((0, 0, 0))
@@ -76,14 +84,16 @@ class MoveDetectionSprite(Sprite):
 
     def update_vel_proportion(self, proportion: float) -> None:
         if proportion < 0.5:
-            length = MoveDetectionSprite.MAX_LENGTH // 2
-            height2 = 70
+            length = MoveDetectionSprite.MIN_LENGTH
+            height1 = MoveDetectionSprite.MIN_HEIGHT1
+            height2 = MoveDetectionSprite.MIN_HEIGHT2
         else:
             length = MoveDetectionSprite.MAX_LENGTH
-            height2 = 100
+            height1 = MoveDetectionSprite.MAX_HEIGHT1
+            height2 = MoveDetectionSprite.MAX_HEIGHT2
 
         if self._length != length:
-            self._update_orig_image(length, height2)
+            self._update_orig_image(length, height1, height2)
             self._rotate()
 
 @dataclass
