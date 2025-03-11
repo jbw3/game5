@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from game import Game
 
 class MoveDetectionSprite(Sprite):
-    MIN_LENGTH = 150
-    MAX_LENGTH = 300
+    MIN_LENGTH = 140
+    MAX_LENGTH = 310
     MIN_HEIGHT1 = 50
     MAX_HEIGHT1 = 65
     MIN_HEIGHT2 = 75

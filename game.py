@@ -676,12 +676,13 @@ class Game:
 
         self._enemy_count = (self._wave - 1) // 5 + 1
 
-        x = flight_view_width//2 - self._enemy_count//2 * 40
+        spacing = 60
+        x = flight_view_width//2 - self._enemy_count//2 * spacing
         y = 30
         for i in range(self._enemy_count):
             EnemyShip(self, x, y, config)
-            x += 40
-            y = 30 + 40 * (i // 10)
+            x += spacing
+            y = 30 + spacing * (i // 10)
 
     def start_setup(self) -> None:
         self._state = Game.State.Setup
