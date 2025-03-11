@@ -105,6 +105,7 @@ class EnemyShipConfig:
 
 class EnemyShip(FlightCollisionSprite):
     MAX_ACCELERATION = 5.0
+    MAX_TARGET_VELOCITY = 300.0
     AIM_ANGLE_RATE = 120.0 # degrees
 
     @unique
@@ -129,7 +130,9 @@ class EnemyShip(FlightCollisionSprite):
             game.flight_view_sprites.add(self._move_detection_sprite)
             game.flight_view_sprites.add(self._aim_sprite)
 
-        self._hull = 3
+        self._engine_enabled = True
+        self._weapon_enabled = True
+        self._hull = 1
         self._target_vel = Vector2(0.0, 0.0)
 
         self._hold_position_timer = 0.0
@@ -151,8 +154,19 @@ class EnemyShip(FlightCollisionSprite):
         self._initial_fire_timer = max(0.0, self._initial_fire_timer - game.frame_time)
         self._laser_fire_timer = max(0.0, self._laser_fire_timer - game.frame_time)
 
-        self._update_engine(game)
-        self._update_weapon(game)
+        if self._engine_enabled:
+            self._update_engine(game)
+
+        self.x += self.dx * game.frame_time
+        self.y += self.dy * game.frame_time
+        self.rect.center = (int(self.x), int(self.y))
+        self.wrap(game.flight_view_size)
+        self._aim_sprite.origin = self.rect.center
+        self._move_detection_sprite.origin = self.rect.center
+        self._move_detection_sprite.update_vel_proportion(Vector2(self.dx, self.dy).magnitude() / EnemyShip.MAX_TARGET_VELOCITY)
+
+        if self._weapon_enabled:
+            self._update_weapon(game)
 
         self.check_collision(game)
 
@@ -189,7 +203,6 @@ class EnemyShip(FlightCollisionSprite):
         self_vel_mag = self_vel.magnitude()
         target_distance = self_pos.distance_to(self._move_target)
         self._logger.debug(f'move target distance: {target_distance}')
-        max_target_vel = 300.0
 
         if self_vel_mag > 0.1:
             self._move_detection_sprite.angle = math.degrees(math.atan2(-self.dy, self.dx))
@@ -215,9 +228,9 @@ class EnemyShip(FlightCollisionSprite):
                     elif target_distance < 10.0:
                         self._target_vel = Vector2(0.0, 0.0)
                     elif target_distance < 150.0:
-                        self._target_vel = (target_distance / 150.0) * max_target_vel * target_vel_unit
+                        self._target_vel = (target_distance / 150.0) * EnemyShip.MAX_TARGET_VELOCITY * target_vel_unit
                     else:
-                        self._target_vel = max_target_vel * target_vel_unit
+                        self._target_vel = EnemyShip.MAX_TARGET_VELOCITY * target_vel_unit
 
             case EnemyShip.MoveState.HoldingAtTarget:
                 self._target_vel = Vector2(0.0, 0.0)
@@ -245,13 +258,6 @@ class EnemyShip(FlightCollisionSprite):
 
         self.dx += accel.x
         self.dy += accel.y
-
-        self.x += self.dx * game.frame_time
-        self.y += self.dy * game.frame_time
-        self.rect.center = (int(self.x), int(self.y))
-        self._aim_sprite.origin = self.rect.center
-        self._move_detection_sprite.origin = self.rect.center
-        self._move_detection_sprite.update_vel_proportion(Vector2(self.dx, self.dy).magnitude() / max_target_vel)
 
     def _update_weapon(self, game: 'Game') -> None:
         if game.ship is None or self._initial_fire_timer > 0.0:
@@ -318,6 +324,14 @@ class EnemyShip(FlightCollisionSprite):
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:
+        if hit_points > 0 and self._engine_enabled:
+            self._engine_enabled = False
+            hit_points -= 1
+
+        if hit_points > 0 and self._weapon_enabled:
+            self._weapon_enabled = False
+            hit_points -= 1
+
         self._hull = max(0, self._hull - hit_points)
         if self._hull <= 0:
             self.destroy(game)
