@@ -26,6 +26,9 @@ class Laser(Sprite):
         self.dx = Laser.SPEED * math.cos(math.radians(angle))
         self.dy = Laser.SPEED * math.sin(math.radians(-angle))
 
+        sound = game.resource_loader.load_sound('laser.wav')
+        sound.play()
+
     @override
     def update(self, game: 'Game') -> None:
         self.x += self.dx * game.frame_time
