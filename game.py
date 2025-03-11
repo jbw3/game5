@@ -1,5 +1,6 @@
 from enum import Enum, IntEnum, unique
 import logging
+import os
 import pygame
 import pygame.locals
 import random
@@ -331,6 +332,7 @@ class Game:
         pygame.init()
         pygame.font.init()
         pygame.joystick.init()
+        pygame.mixer.init()
 
         # hide the cursor
         pygame.mouse.set_visible(False)
@@ -687,6 +689,9 @@ class Game:
     def start_setup(self) -> None:
         self._state = Game.State.Setup
 
+        pygame.mixer_music.load(os.path.join('audio', 'menu1.wav'))
+        pygame.mixer_music.play(loops=-1)
+
         self._setup_menu.start(self)
 
         # reset background
@@ -695,6 +700,9 @@ class Game:
         self._update_rects.append(self._display_surf.get_rect())
 
     def start_mission(self, num_players: int, game_mode: GameMode) -> None:
+        pygame.mixer_music.stop()
+        pygame.mixer_music.unload()
+
         interior_view_width, interior_view_height = self._interior_view_surface.get_size()
         interior_view_center = (interior_view_width // 2, interior_view_height // 2)
 
