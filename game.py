@@ -698,7 +698,7 @@ class Game:
         self._state = Game.State.Setup
 
         pygame.mixer_music.load(os.path.join('audio', 'menu1.wav'))
-        pygame.mixer_music.play(loops=-1)
+        pygame.mixer_music.play(loops=-1, fade_ms=2_000)
 
         self._setup_menu.start(self)
 
