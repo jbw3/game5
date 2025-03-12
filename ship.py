@@ -572,4 +572,6 @@ class Ship(FlightCollisionSprite):
         # create explosion graphic
         ShipExplosionAnimation(self.game, self.rect.center)
 
+        self.game.resource_loader.load_sound('defeat.wav').play()
+
         self.game.end_mission(delay=True)

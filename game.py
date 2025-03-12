@@ -749,7 +749,7 @@ class Game:
     def end_mission(self, delay: bool) -> None:
         self._state = Game.State.PostMission
         if delay:
-            pygame.time.set_timer(Game.RESET_GAME_EVENT, 3_000, 1)
+            pygame.time.set_timer(Game.RESET_GAME_EVENT, 5_000, 1)
         else:
             self._reset_game()
 
