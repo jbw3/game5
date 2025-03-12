@@ -34,7 +34,7 @@ def game_mode_to_str(game_mode: GameMode) -> str:
             assert False, f'Unknown game mode: {game_mode}'
 
 class OptionsMenu:
-    def __init__(self, options: list[str], font: pygame.font.Font, color: pygame.color.Color, x: int, top: int):
+    def __init__(self, game: 'Game', options: list[str], font: pygame.font.Font, color: pygame.color.Color, x: int, top: int):
         self._options_text = options[:]
         self._font = font
         self._color = color
@@ -43,6 +43,7 @@ class OptionsMenu:
         self._options_sprites: list[Sprite] = []
         self._axis_was_centered = False
         self._controller: Controller|None = None
+        self._sound = game.resource_loader.load_sound('menu_select.wav')
 
         for text in self._options_text:
             sprite = Sprite(self._font.render(text, True, self._color))
@@ -100,8 +101,10 @@ class OptionsMenu:
                 self._axis_was_centered = False
                 if is_up and self._option_index > 0:
                     self._option_index -= 1
+                    self._sound.play()
                 elif is_down and self._option_index < len(self._options_sprites) - 1:
                     self._option_index += 1
+                    self._sound.play()
                 self._update_options()
 
 class SetupMenu:
@@ -124,15 +127,16 @@ class SetupMenu:
             'Start',
             'Quit',
         ]
-        self._start_options = OptionsMenu(start_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
+        self._start_options = OptionsMenu(game, start_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
 
         setup_options = [
             f'Players: {self._num_players}',
         ]
         setup_options.append(f'Mode: {game_mode_to_str(game.mode)}')
-        self._setup_options = OptionsMenu(setup_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
+        self._setup_options = OptionsMenu(game, setup_options, self._font, SetupMenu.TextColor, window_width//2, window_height//2 - 50)
 
         self._state = SetupMenu.State.Start
+        self._sound = game.resource_loader.load_sound('menu_select.wav')
 
     def start(self, game: 'Game') -> None:
         self._button_was_released = False
@@ -220,9 +224,11 @@ class SetupMenu:
                 num_controllers = len(game.controllers)
                 if self._num_players < num_controllers:
                     self._num_players += 1
+                    self._sound.play()
             case 1:
                 if self._game_mode + 1 in GameModeInts:
                     self._game_mode = GameMode(self._game_mode + 1)
+                    self._sound.play()
             case _:
                 assert False, f'Unknown option index: {self._setup_options.option_index}'
 
@@ -231,9 +237,11 @@ class SetupMenu:
             case 0:
                 if self._num_players > 1:
                     self._num_players -= 1
+                    self._sound.play()
             case 1:
                 if self._game_mode - 1 in GameModeInts:
                     self._game_mode = GameMode(self._game_mode - 1)
+                    self._sound.play()
             case _:
                 assert False, f'Unknown option index: {self._setup_options.option_index}'
 
@@ -262,7 +270,7 @@ class PauseMenu:
         PauseRelease = 1
         UnpausePress = 2
 
-    def __init__(self):
+    def __init__(self, game: 'Game'):
         window_width, window_height = pygame.display.get_window_size()
         self._paused_font = pygame.font.SysFont('Courier', 90)
         self._paused_sprite = Sprite(self._paused_font.render('Paused', True, PauseMenu.TextColor))
@@ -273,7 +281,7 @@ class PauseMenu:
             'Resume',
             'Quit',
         ]
-        self._options_menu = OptionsMenu(options, option_font, PauseMenu.TextColor, window_width // 2, self._paused_sprite.rect.bottom + 30)
+        self._options_menu = OptionsMenu(game, options, option_font, PauseMenu.TextColor, window_width // 2, self._paused_sprite.rect.bottom + 30)
 
         self._controller: Controller|None = None
         self._state = PauseMenu.State.PausePress
@@ -359,7 +367,7 @@ class Game:
         self._mode = GameMode.AsteroidField
 
         self._setup_menu = SetupMenu(self)
-        self._pause_menu = PauseMenu()
+        self._pause_menu = PauseMenu(self)
 
         self._interior_view_surface = self._display_surf.subsurface((0, 0), (display_width//2, display_height))
         self._flight_view_surface = self._display_surf.subsurface((display_width//2, 0), (display_width//2, display_height))
