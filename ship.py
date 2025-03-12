@@ -135,15 +135,11 @@ class EngineConsole(Console):
         person.rect.bottom = self.rect.top - 4
 
     @override
-    def activate(self, ship: 'Ship', person: Person) -> None:
-        super().activate(ship, person)
-        ship.enable_engine()
-
-    @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
         if self._person is not None:
             if not ship.get_engine_enabled():
                 ship.enable_engine()
+                game.resource_loader.load_sound('fix.wav').play(loops=1)
 
     def set_error(self, game: 'Game', is_error: bool) -> None:
         old_rect = self.rect.copy()
@@ -170,15 +166,11 @@ class WeaponSystemConsole(Console):
         person.rect.top = self.rect.bottom + 1
 
     @override
-    def activate(self, ship: 'Ship', person: Person) -> None:
-        super().activate(ship, person)
-        ship.enable_weapon(self._weapon_index)
-
-    @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
         if self._person is not None:
             if not ship.get_weapon_enabled(self._weapon_index):
                 ship.enable_weapon(self._weapon_index)
+                game.resource_loader.load_sound('fix.wav').play(loops=1)
 
     def set_error(self, game: 'Game', is_error: bool) -> None:
         old_rect = self.rect.copy()
