@@ -9,10 +9,28 @@ if TYPE_CHECKING:
 class Animation(Sprite):
     def __init__(self, images: list[pygame.surface.Surface], period: int = -1, loop: bool = False):
         super().__init__(images[0])
+        self._images: list[pygame.surface.Surface] = []
+        self._angle = 0.0
         self.set_images(images, period, loop)
 
+    def _rotate_images(self) -> None:
+        self._images.clear()
+        for image in self._orig_images:
+            rotated_image = pygame.transform.rotate(image, self._angle)
+            self._images.append(rotated_image)
+
+    @property
+    def angle(self) -> float:
+        return self._angle
+
+    @angle.setter
+    def angle(self, new_angle: float) -> None:
+        self._angle = new_angle % 360.0
+        self._rotate_images()
+
     def set_images(self, images: list[pygame.surface.Surface], period: int = -1, loop: bool = False) -> None:
-        self._images = images
+        self._orig_images = images[:]
+        self._rotate_images()
         self._index = 0
         self._period = period
         self._loop = loop

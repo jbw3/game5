@@ -130,8 +130,18 @@ class EngineConsole(Console):
 
     @override
     def _move_person(self, person: Person) -> None:
-        person.rect.centerx = self.rect.centerx
-        person.rect.bottom = self.rect.top - 4
+        person.rect.bottom = self.rect.top
+
+    @override
+    def activate(self, ship: 'Ship', person: Person) -> None:
+        super().activate(ship, person)
+        person.angle = 180.0
+
+    @override
+    def deactivate(self, ship: 'Ship') -> None:
+        if self._person is not None:
+            self._person.angle = 0.0
+        super().deactivate(ship)
 
     @override
     def update_ship(self, game: 'Game', ship: 'Ship') -> None:
