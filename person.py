@@ -1,6 +1,7 @@
 from enum import Enum, unique
 import math
 import pygame
+from pygame.color import Color
 from typing import TYPE_CHECKING, override
 
 from animation import Animation
@@ -16,12 +17,43 @@ class Person(Animation):
         Console = 1
 
     IMAGE_NAME = 'person.png'
+    COLORS = [
+        Color(0, 50, 205), # blue
+        Color(210, 0, 0), # red
+        Color(0, 150, 20), # green
+        Color(180, 160, 0), # yellow
+        Color(160, 0, 160), # purple
+    ]
     MAX_SPEED = 70.0
 
-    def __init__(self, game: 'Game', center: tuple[int, int], controller: Controller):
-        self._basic_images = [game.resource_loader.load_image(Person.IMAGE_NAME)]
+    _image_cache: dict[tuple[str, int], pygame.surface.Surface] = {}
+
+    @staticmethod
+    def _color_image(image: pygame.surface.Surface, color: Color) -> pygame.surface.Surface:
+        replace_color = Color(63, 72, 204)
+        for x in range(image.get_width()):
+            for y in range(image.get_height()):
+                if image.get_at((x, y)) == replace_color:
+                    image.set_at((x, y), color)
+
+        return image
+
+    @staticmethod
+    def load_image(game: 'Game', name: str, color: Color) -> pygame.surface.Surface:
+        color_key = (color.r << 16) | (color.g << 8) | color.b
+        image = Person._image_cache.get((name, color_key))
+        if image is None:
+            base_image = game.resource_loader.load_image(name)
+            image = Person._color_image(base_image.copy(), color)
+            Person._image_cache[(name, color_key)] = image
+
+        return image
+
+    def __init__(self, game: 'Game', index: int, center: tuple[int, int], controller: Controller):
+        color = Person.COLORS[index % len(Person.COLORS)]
+        self._basic_images = [Person.load_image(game, Person.IMAGE_NAME, color)]
         self._control_images = [
-            game.resource_loader.load_image(f'person_control{i+1}.png')
+            Person.load_image(game, f'person_control{i+1}.png', color)
             for i in range(5)
         ]
 
