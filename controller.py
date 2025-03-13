@@ -15,19 +15,16 @@ class Controller:
             self._activate_button_num = 0
             self._deactivate_button_num = 1
             self._trigger_button_num = 10
-            self._fast_button_num = 9
             self._pause_buttons = [4, 6]
         elif guid == Controller.GAMEPAD_F310_GUID:
             self._activate_button_num = 0
             self._deactivate_button_num = 1
             self._trigger_button_num = 5
-            self._fast_button_num = 4
             self._pause_buttons = [6, 7]
         else:
             self._activate_button_num = 1
             self._deactivate_button_num = 2
             self._trigger_button_num = 5
-            self._fast_button_num = 4
             self._pause_buttons = [8, 9]
 
     def _get_adjusted_axis(self, value: float) -> float:
@@ -47,6 +44,12 @@ class Controller:
     def get_move_y_axis(self) -> float:
         return self._get_adjusted_axis(self._joystick.get_axis(1))
 
+    def get_aim_x_axis(self) -> float:
+        return self._joystick.get_axis(0)
+
+    def get_aim_y_axis(self) -> float:
+        return self._joystick.get_axis(1)
+
     def get_activate_button(self) -> bool:
         return self._joystick.get_button(self._activate_button_num)
 
@@ -55,9 +58,6 @@ class Controller:
 
     def get_trigger_button(self) -> bool:
         return self._joystick.get_button(self._trigger_button_num)
-
-    def get_fast_button(self) -> bool:
-        return self._joystick.get_button(self._fast_button_num)
 
     def get_pause_button(self) -> bool:
         for button in self._pause_buttons:
