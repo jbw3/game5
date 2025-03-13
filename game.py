@@ -741,7 +741,7 @@ class Game:
             y = interior_view_center[1] - 130 + (i // 2 * 15)
 
             controller = self._controllers[i]
-            person = Person(self, (x, y), controller)
+            person = Person(self, i, (x, y), controller)
             self._people_sprites.add(person)
 
         self._start_wave()

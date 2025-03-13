@@ -15,13 +15,14 @@ class Person(Animation):
         Moving = 0
         Console = 1
 
-    IMAGE_NAME = 'person.png'
+    MAX_IMAGES = 1
     MAX_SPEED = 70.0
 
-    def __init__(self, game: 'Game', center: tuple[int, int], controller: Controller):
-        self._basic_images = [game.resource_loader.load_image(Person.IMAGE_NAME)]
+    def __init__(self, game: 'Game', index: int, center: tuple[int, int], controller: Controller):
+        image_idx = index % Person.MAX_IMAGES + 1
+        self._basic_images = [game.resource_loader.load_image(f'person{image_idx}.png')]
         self._control_images = [
-            game.resource_loader.load_image(f'person_control{i+1}.png')
+            game.resource_loader.load_image(f'person{image_idx}_control{i+1}.png')
             for i in range(5)
         ]
 
