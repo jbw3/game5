@@ -12,14 +12,20 @@ class Controller:
 
         self._axis_threshold = 0.2
         if guid == Controller.NINTENDO_SWITCH_PRO_GUID:
+            self._activate_button_num = 0
+            self._deactivate_button_num = 1
             self._trigger_button_num = 10
             self._fast_button_num = 9
             self._pause_buttons = [4, 6]
         elif guid == Controller.GAMEPAD_F310_GUID:
+            self._activate_button_num = 0
+            self._deactivate_button_num = 1
             self._trigger_button_num = 5
             self._fast_button_num = 4
             self._pause_buttons = [6, 7]
         else:
+            self._activate_button_num = 1
+            self._deactivate_button_num = 2
             self._trigger_button_num = 5
             self._fast_button_num = 4
             self._pause_buttons = [8, 9]
@@ -42,10 +48,10 @@ class Controller:
         return self._get_adjusted_axis(self._joystick.get_axis(1))
 
     def get_activate_button(self) -> bool:
-        return self._joystick.get_button(0)
+        return self._joystick.get_button(self._activate_button_num)
 
     def get_deactivate_button(self) -> bool:
-        return self._joystick.get_button(1)
+        return self._joystick.get_button(self._deactivate_button_num)
 
     def get_trigger_button(self) -> bool:
         return self._joystick.get_button(self._trigger_button_num)
