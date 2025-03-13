@@ -1,6 +1,7 @@
 import math
 import logging
 import pygame
+from pygame.color import Color
 import random
 from typing import TYPE_CHECKING, override
 
@@ -10,6 +11,7 @@ from door import Door
 from laser import Laser
 from person import Person
 from sprite import FlightCollisionSprite, Sprite
+from status_bar import StatusBar
 
 if TYPE_CHECKING:
     from game import Game
@@ -195,6 +197,7 @@ class WeaponSystemConsole(Console):
 class Ship(FlightCollisionSprite):
     MAX_ACCELERATION = 5.0
     LASER_DELAY = 0.5 # seconds
+    MAX_HULL = 10
     FLOOR_COLOR = (180, 180, 180)
     WALL_COLOR = (80, 80, 80)
     WALL_WIDTH = 10
@@ -230,7 +233,7 @@ class Ship(FlightCollisionSprite):
 
         self._num_weapons = 2
         self._laser_fire_timers = [0.0, 0.0]
-        self._hull = 10
+        self._hull = Ship.MAX_HULL
 
         self._floor: list[Sprite] = []
         self._walls: list[Sprite] = []
@@ -239,10 +242,15 @@ class Ship(FlightCollisionSprite):
         self._create_interior(interior_view_center)
 
         # hull integrity info
-        self._status_font = pygame.font.SysFont('Arial', 40)
-        self._hull_text = Sprite(pygame.surface.Surface((0, 0)))
-        self._update_hull_info()
+        self._hull_status = StatusBar(200, 20, Color(0, 190, 20))
+        self._hull_status.rect.topright = (game.flight_view_size[0] - 10, 10)
+        game.info_overlay_sprites.add(self._hull_status)
+        self._status_font = pygame.font.SysFont('Arial', 28)
+        self._hull_text = Sprite(self._status_font.render('Hull:', True, (252, 10, 30)))
+        self._hull_text.rect.right = self._hull_status.rect.left - 10
+        self._hull_text.rect.centery = self._hull_status.rect.centery
         game.info_overlay_sprites.add(self._hull_text)
+        self._update_hull_info()
 
         # weapon aiming
         self._aiming: list[AimSprite] = []
@@ -413,9 +421,7 @@ class Ship(FlightCollisionSprite):
         return wall
 
     def _update_hull_info(self):
-        self._hull_text.image = self._status_font.render(f'Hull: {self._hull}', True, (252, 10, 30))
-        self._hull_text.rect.bottomleft = (10, self.game.interior_view_size[1] - 10)
-        self._hull_text.dirty = 1
+        self._hull_status.set_status(self._hull / Ship.MAX_HULL)
 
     def get_engine_enabled(self) -> bool:
         return self._engine_enabled
