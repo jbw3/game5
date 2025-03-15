@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, override
 
 from animation import Animation
 from controller import Controller
+from sprite import Sprite
+from status_bar import StatusBar
 
 if TYPE_CHECKING:
     from game import Game
@@ -25,6 +27,7 @@ class Person(Animation):
         Color(160, 0, 160), # purple
     ]
     MAX_SPEED = 70.0
+    MAX_HEALTH = 5
 
     _image_cache: dict[tuple[str, int], pygame.surface.Surface] = {}
 
@@ -51,7 +54,8 @@ class Person(Animation):
 
     def __init__(self, game: 'Game', index: int, center: tuple[int, int], controller: Controller):
         color = Person.COLORS[index % len(Person.COLORS)]
-        self._basic_images = [Person.load_image(game, Person.IMAGE_NAME, color)]
+        basic_image = Person.load_image(game, Person.IMAGE_NAME, color)
+        self._basic_images = [basic_image]
         self._control_images = [
             Person.load_image(game, f'person_control{i+1}.png', color)
             for i in range(5)
@@ -69,6 +73,16 @@ class Person(Animation):
 
         self._controller = controller
         self._state: Person.State = Person.State.Moving
+        self._health = Person.MAX_HEALTH
+
+        info_sprite = Sprite(basic_image)
+        info_sprite.rect.topleft = (10, index * 30 + 10)
+        game.info_overlay_sprites.add(info_sprite)
+
+        self._health_bar = StatusBar(100, 20, color)
+        self._health_bar.rect.left = info_sprite.rect.right + 10
+        self._health_bar.rect.centery = info_sprite.rect.centery
+        game.info_overlay_sprites.add(self._health_bar)
 
     @property
     def controller(self) -> Controller:
@@ -85,6 +99,22 @@ class Person(Animation):
                 self._state_console(game)
             case _:
                 assert False, f'Unknown state: {self._state}'
+
+    def damage(self, game: 'Game', hit_points: int) -> None:
+        self._health = max(0, self._health - hit_points)
+        self._health_bar.set_status(self._health / Person.MAX_HEALTH)
+
+        if self._health <= 0:
+            self.die(game)
+
+    def die(self, game: 'Game') -> None:
+        # remove graphics
+        self.kill()
+
+        if self._state == Person.State.Console:
+            game.ship.deactivate_console(self)
+
+        game.on_player_death()
 
     def _state_moving(self, game: 'Game') -> None:
         last_rect = self.rect.copy()

@@ -318,7 +318,7 @@ class PauseMenu:
                     case 0:
                         game.unpause()
                     case 1:
-                        game.end_mission(delay=False)
+                        game.end_mission(defeat=False)
 
 class Game:
     MAX_FPS = 60.0
@@ -417,6 +417,7 @@ class Game:
         self._state: Game.State = Game.State.Setup
         self._ship: Ship|None = None
         self._num_players = 0
+        self._alive_players = 0
         self._wave = 1
         self._asteroid_count = 0
         self._enemy_count = 0
@@ -462,7 +463,7 @@ class Game:
         return self._info_overlay_sprites
 
     @property
-    def people_sprites(self) -> 'pygame.sprite.Group[Sprite]':
+    def people_sprites(self) -> 'pygame.sprite.Group[Person]':
         return self._people_sprites
 
     @property
@@ -489,6 +490,11 @@ class Game:
     def unpause(self) -> None:
         self._paused = False
         self._menu_sprites.empty()
+
+    def on_player_death(self) -> None:
+        self._alive_players -= 1
+        if self._alive_players <= 0:
+            self.end_mission(defeat=True)
 
     def update_asteroid_count(self, change: int) -> None:
         self._asteroid_count += change
@@ -730,6 +736,7 @@ class Game:
         self._update_rects.append(self._interior_view_surface.get_rect())
 
         self._num_players = num_players
+        self._alive_players = num_players
         self._wave = 1
 
         # create people
@@ -746,9 +753,10 @@ class Game:
 
         self._start_wave()
 
-    def end_mission(self, delay: bool) -> None:
+    def end_mission(self, defeat: bool) -> None:
         self._state = Game.State.PostMission
-        if delay:
+        if defeat:
+            self.resource_loader.load_sound('defeat.wav').play()
             pygame.time.set_timer(Game.RESET_GAME_EVENT, 5_000, 1)
         else:
             self._reset_game()
