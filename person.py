@@ -20,11 +20,12 @@ class Person(Animation):
 
     IMAGE_NAME = 'person.png'
     COLORS = [
+        Color(179, 0, 28), # red
         Color(0, 50, 205), # blue
-        Color(210, 0, 0), # red
         Color(0, 150, 20), # green
-        Color(180, 160, 0), # yellow
-        Color(160, 0, 160), # purple
+        Color(179, 103, 29), # orange
+        Color(160, 50, 160), # purple
+        Color(199, 68, 171), # pink
     ]
     MAX_SPEED = 70.0
     MAX_HEALTH = 5
