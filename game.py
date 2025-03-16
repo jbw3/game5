@@ -645,6 +645,7 @@ class Game:
         self._interior_solid_sprites.empty()
         self._flight_collision_sprites.empty()
         self._info_overlay_sprites.empty()
+        self._people_sprites.empty()
 
         self._paused = False
         self._ship = None
