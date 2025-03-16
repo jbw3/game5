@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, override
 from aim_sprite import AimSprite
 from animation import ShipExplosionAnimation
 from door import Door
+from fire import Fire
 from laser import Laser
 from person import Person
 from sprite import FlightCollisionSprite, Sprite
@@ -420,8 +421,13 @@ class Ship(FlightCollisionSprite):
         self._walls.append(wall)
         return wall
 
-    def _update_hull_info(self):
+    def _update_hull_info(self) -> None:
         self._hull_status.set_status(self._hull / Ship.MAX_HULL)
+
+    def _create_fire(self) -> None:
+        floor_topleft = self._floor[3].rect.topleft
+        fire = Fire(self.game, (floor_topleft[0] + 5, floor_topleft[1] + 5))
+        self.game.interior_view_sprites.add(fire)
 
     def get_engine_enabled(self) -> bool:
         return self._engine_enabled
