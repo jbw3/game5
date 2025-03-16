@@ -22,6 +22,7 @@ class Door(Sprite):
         self._gap_len = gap_len
         self._current_len = self._gap_len / 2
         self._thickness = thickness
+        self._opening = False
 
         if self._orientation == Door.Orientation.Horizontal:
             width = self._gap_len
@@ -50,6 +51,12 @@ class Door(Sprite):
             if proximity_rect.colliderect(person.rect):
                 opening = True
                 break
+
+        if self._opening != opening:
+            sound = game.resource_loader.load_sound('door.wav')
+            sound.set_volume(0.1)
+            sound.play()
+            self._opening = opening
 
         needs_update = False
         if opening:
