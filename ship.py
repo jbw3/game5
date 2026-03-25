@@ -424,10 +424,24 @@ class Ship(FlightCollisionSprite):
     def _update_hull_info(self) -> None:
         self._hull_status.set_status(self._hull / Ship.MAX_HULL)
 
-    def _create_fire(self) -> None:
-        floor_topleft = self._floor[3].rect.topleft
-        fire = Fire(self.game, (floor_topleft[0] + 5, floor_topleft[1] + 5))
-        self.game.interior_view_sprites.add(fire)
+    def _try_create_fire(self) -> bool:
+        floor = random.choice(self._floor)
+        floor_topleft = floor.rect.topleft
+        width_max = (floor.rect.width - 10) // 15
+        height_max = (floor.rect.height - 10) // 15
+        new_topleft = (
+            floor_topleft[0] + 5 + 15 * random.randrange(0, width_max),
+            floor_topleft[1] + 5 + 15 * random.randrange(0, height_max),
+        )
+        fire = Fire(self.game, new_topleft)
+        sprites = pygame.sprite.spritecollide(fire, self.game.fires, False)
+        if len(sprites) > 0:
+            # TODO: propagate fire
+            return False
+        else:
+            self.game.fires.add(fire)
+            self.game.interior_view_sprites.add(fire)
+            return True
 
     def get_engine_enabled(self) -> bool:
         return self._engine_enabled
@@ -548,6 +562,10 @@ class Ship(FlightCollisionSprite):
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:
+        if game.debug and hit_points > 0:
+            if self._try_create_fire():
+                hit_points -= 1
+
         if self._engine_enabled and hit_points > 0 and random.randint(0, 1) == 0:
             self.disable_engine()
             hit_points -= 1

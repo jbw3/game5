@@ -5,6 +5,7 @@ import pygame
 import pygame.locals
 import random
 import sys
+from typing import TYPE_CHECKING
 
 from asteroid import Asteroid
 from controller import Controller
@@ -14,6 +15,9 @@ from resource_loader import ResourceLoader
 from ship import Ship
 from sprite import FlightCollisionSprite, Sprite
 from stopwatch import Stopwatch
+
+if TYPE_CHECKING:
+    from fire import Fire
 
 DEBUG_TEXT_COLOR = (180, 0, 150)
 
@@ -410,6 +414,7 @@ class Game:
         self._flight_collision_sprites = pygame.sprite.Group()
         self._info_overlay_sprites = pygame.sprite.LayeredDirty()
         self._people_sprites = pygame.sprite.Group()
+        self._fires = pygame.sprite.Group()
 
         self._joysticks: list[pygame.joystick.JoystickType] = []
         self._controllers: list[Controller] = []
@@ -465,6 +470,10 @@ class Game:
     @property
     def people_sprites(self) -> 'pygame.sprite.Group[Person]':
         return self._people_sprites
+
+    @property
+    def fires(self) -> 'pygame.sprite.Group[Fire]':
+        return self._fires
 
     @property
     def controllers(self) -> list[Controller]:
@@ -646,6 +655,7 @@ class Game:
         self._flight_collision_sprites.empty()
         self._info_overlay_sprites.empty()
         self._people_sprites.empty()
+        self._fires.empty()
 
         self._paused = False
         self._ship = None
