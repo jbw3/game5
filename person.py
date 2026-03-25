@@ -29,6 +29,7 @@ class Person(Animation):
     ]
     MAX_SPEED = 70.0
     MAX_HEALTH = 5
+    FIRE_DAMAGE_THRESHOLD = 1.2
 
     _image_cache: dict[tuple[str, int], pygame.surface.Surface] = {}
 
@@ -75,6 +76,7 @@ class Person(Animation):
         self._controller = controller
         self._state: Person.State = Person.State.Moving
         self._health = Person.MAX_HEALTH
+        self._fire_damage_timer = 0.0
 
         info_sprite = Sprite(basic_image)
         info_sprite.rect.topleft = (10, index * 30 + 10)
@@ -100,6 +102,14 @@ class Person(Animation):
                 self._state_console(game)
             case _:
                 assert False, f'Unknown state: {self._state}'
+
+    def fire_damage(self, game: 'Game', damage_time: float) -> None:
+        self._fire_damage_timer += damage_time
+        hit_points = int(self._fire_damage_timer / Person.FIRE_DAMAGE_THRESHOLD)
+        if hit_points > 0:
+            self.damage(game, hit_points)
+
+        self._fire_damage_timer %= Person.FIRE_DAMAGE_THRESHOLD
 
     def damage(self, game: 'Game', hit_points: int) -> None:
         self._health = max(0, self._health - hit_points)
