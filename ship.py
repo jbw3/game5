@@ -433,7 +433,7 @@ class Ship(FlightCollisionSprite):
             floor_topleft[0] + 5 + 15 * random.randrange(0, width_max),
             floor_topleft[1] + 5 + 15 * random.randrange(0, height_max),
         )
-        fire = Fire(self.game, new_topleft)
+        fire = Fire(self.game, new_topleft, floor)
         sprites = pygame.sprite.spritecollide(fire, self.game.fires, False)
         if len(sprites) > 0:
             # TODO: propagate fire
