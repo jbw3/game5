@@ -436,8 +436,8 @@ class Ship(FlightCollisionSprite):
         fire = Fire(self.game, new_topleft, floor)
         sprites = pygame.sprite.spritecollide(fire, self.game.fires, False)
         if len(sprites) > 0:
-            # TODO: propagate fire
-            return False
+            # if fire already exists here, try to propagate it
+            return sprites[0].propagate(self.game)
         else:
             self.game.fires.add(fire)
             self.game.interior_view_sprites.add(fire)

@@ -10,7 +10,9 @@ if TYPE_CHECKING:
     from sprite import Sprite
 
 class Fire(Animation):
-    PROPAGATE_THRESHOLD = 3.0
+    @staticmethod
+    def get_propagate_threshold() -> float:
+        return 5.0 + (random.random() - 0.5) * 2.0
 
     def __init__(self, game: 'Game', topleft: tuple[int, int], floor: 'Sprite'):
         self._logger = logging.getLogger('Fire')
@@ -26,7 +28,7 @@ class Fire(Animation):
         self.rect.topleft = topleft
 
         self._floor = floor
-        self._propagate_timer = 0.0
+        self._propagate_timer = Fire.get_propagate_threshold()
 
     @override
     def update(self, game: 'Game') -> None:
@@ -35,10 +37,10 @@ class Fire(Animation):
         for person in pygame.sprite.spritecollide(self, game.people_sprites, False):
             person.fire_damage(game, game.frame_time)
 
-        self._propagate_timer += game.frame_time
-        while self._propagate_timer >= Fire.PROPAGATE_THRESHOLD:
+        self._propagate_timer -= game.frame_time
+        while self._propagate_timer <= 0.0:
             self.propagate(game)
-            self._propagate_timer -= Fire.PROPAGATE_THRESHOLD
+            self._propagate_timer += Fire.get_propagate_threshold()
 
     def propagate(self, game: 'Game') -> bool:
         length = self.rect.width
