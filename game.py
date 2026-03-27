@@ -394,7 +394,7 @@ class Game:
         self._divider = Sprite(divider_surface)
         self._divider.rect.topleft = (display_width // 2 - 4, 0)
 
-        self._update_rects: list[pygame.rect.Rect] = []
+        self._update_rects: list[pygame.rect.Rect | pygame.rect.FRect] = []
 
         # need to update the whole screen the first time
         self._update_rects.append(self._display_surf.get_rect())
