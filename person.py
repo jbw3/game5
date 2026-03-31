@@ -8,6 +8,7 @@ from animation import Animation
 from controller import Controller
 from sprite import Sprite
 from status_bar import StatusBar
+from tool import Tool
 
 if TYPE_CHECKING:
     from game import Game
@@ -77,6 +78,7 @@ class Person(Animation):
         self._state: Person.State = Person.State.Moving
         self._health = Person.MAX_HEALTH
         self._fire_damage_timer = 0.0
+        self._tool: Tool|None = None
 
         info_sprite = Sprite(basic_image)
         info_sprite.rect.topleft = (10, index * 30 + 10)
@@ -157,14 +159,26 @@ class Person(Animation):
                 self.rect.right = sprite.rect.left
                 self.x = float(self.rect.centerx)
 
-        if self._controller.get_activate_button():
-            if game.ship.try_activate_console(self):
-                self._state = Person.State.Console
-                old_bottom = self.rect.bottom
-                self.set_images(self._control_images, period=300, loop=True)
-                self.rect.bottom = old_bottom
-                self.x = float(self.rect.centerx)
-                self.y = float(self.rect.centery)
+        if self._tool is None:
+            if self._controller.get_activate_button():
+                if game.ship.try_activate_console(self):
+                    self._state = Person.State.Console
+                    old_bottom = self.rect.bottom
+                    self.set_images(self._control_images, period=300, loop=True)
+                    self.rect.bottom = old_bottom
+                    self.x = float(self.rect.centerx)
+                    self.y = float(self.rect.centery)
+                else:
+                    for tool in game.ship.tools:
+                        tool_rect = tool.rect.inflate(8, 8)
+                        if tool.person is None and tool_rect.colliderect(self.rect):
+                            self._tool = tool
+                            tool.pick_up(game, self)
+                            break
+        else:
+            if self._controller.get_deactivate_button():
+                self._tool.put_down(game, self.rect.left, self.rect.bottom)
+                self._tool = None
 
         if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
             self.dirty = 1

@@ -13,6 +13,7 @@ from laser import Laser
 from person import Person
 from sprite import FlightCollisionSprite, Sprite
 from status_bar import StatusBar
+from tool import Tool, ToolType
 
 if TYPE_CHECKING:
     from game import Game
@@ -239,6 +240,7 @@ class Ship(FlightCollisionSprite):
         self._floor: list[Sprite] = []
         self._walls: list[Sprite] = []
         self._consoles: list[Console] = []
+        self._tools: list[Tool] = []
 
         self._create_interior(interior_view_center)
 
@@ -266,6 +268,10 @@ class Ship(FlightCollisionSprite):
             self._weapon_enabled.append(True)
 
         self._engine_enabled = True
+
+    @property
+    def tools(self) -> list[Tool]:
+        return self._tools
 
     @property
     def num_weapons(self) -> int:
@@ -413,6 +419,26 @@ class Ship(FlightCollisionSprite):
             self._weapon_system_consoles.append(weapon_system_console)
             self._consoles.append(weapon_system_console)
             left = weapon_system_console.rect.right
+
+        # tools
+        fire_extinguishers: list[Tool] = [
+            Tool(
+                self.game,
+                ToolType.FireExtinguisher,
+                right=floor3.rect.right - 10,
+                top=floor3.rect.y,
+            ),
+            Tool(
+                self.game,
+                ToolType.FireExtinguisher,
+                left=floor7.rect.left + 5,
+                bottom=floor7.rect.bottom - 5,
+            ),
+        ]
+        for fire_extinguisher in fire_extinguishers:
+            self._tools.append(fire_extinguisher)
+            self.game.interior_view_sprites.add(fire_extinguisher)
+            self.game.interior_solid_sprites.add(fire_extinguisher)
 
     def _create_wall(self, width: int, height: int) -> Sprite:
         surface = pygame.surface.Surface((width, height)).convert()
