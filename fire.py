@@ -29,6 +29,7 @@ class Fire(Animation):
 
         self._floor = floor
         self._propagate_timer = Fire.get_propagate_threshold()
+        self._health = 1.0
 
     @override
     def update(self, game: 'Game') -> None:
@@ -66,3 +67,11 @@ class Fire(Animation):
         game.interior_view_sprites.add(new_fire)
 
         return True
+
+    def damage(self, damage_time: float) -> bool:
+        self._health -= damage_time
+        if self._health <= 0.0:
+            self.kill()
+            return True
+
+        return False

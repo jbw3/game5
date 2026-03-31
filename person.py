@@ -8,7 +8,7 @@ from animation import Animation
 from controller import Controller
 from sprite import Sprite
 from status_bar import StatusBar
-from tool import Tool
+from tool import Tool, ToolType
 
 if TYPE_CHECKING:
     from game import Game
@@ -80,6 +80,20 @@ class Person(Animation):
         self._fire_damage_timer = 0.0
         self._tool: Tool|None = None
 
+        self._fire_extinguisher_spraying = False
+        spray_image = pygame.surface.Surface((15, 25))
+        spray_image.fill((0, 0, 0))
+        spray_image.set_colorkey((0, 0, 0))
+        spray_image.set_alpha(130)
+        points = [
+            (0, 0),
+            (14, 0),
+            (8, 24),
+            (6, 24),
+        ]
+        pygame.draw.polygon(spray_image, (100, 100, 100), points)
+        self._spray = Sprite(spray_image)
+
         info_sprite = Sprite(basic_image)
         info_sprite.rect.topleft = (10, index * 30 + 10)
         game.info_overlay_sprites.add(info_sprite)
@@ -127,7 +141,43 @@ class Person(Animation):
         if self._state == Person.State.Console:
             game.ship.deactivate_console(self)
 
+        if self._fire_extinguisher_spraying:
+            self._stop_fire_extinguisher_spray(game)
+
         game.on_player_death()
+
+    def _start_fire_extinguisher_spray(self, game: 'Game') -> None:
+        self._fire_extinguisher_spraying = True
+        game.interior_view_sprites.add(self._spray)
+
+    def _stop_fire_extinguisher_spray(self, game: 'Game') -> None:
+        self._fire_extinguisher_spraying = False
+        game.interior_view_sprites.remove(self._spray)
+
+    def _fire_extinguisher_update(self, game: 'Game') -> None:
+        new_fire_extinguisher_spraying = self._controller.get_trigger_button()
+
+        if new_fire_extinguisher_spraying != self._fire_extinguisher_spraying:
+            if new_fire_extinguisher_spraying:
+                self._start_fire_extinguisher_spray(game)
+            else:
+                self._stop_fire_extinguisher_spray(game)
+
+        if self._fire_extinguisher_spraying:
+            # TODO: change length based on solid objects
+
+            last_rect = self._spray.rect.copy()
+            self._spray.rect.x = self.rect.x
+            self._spray.rect.bottom = self.rect.y
+            if last_rect.x != self._spray.rect.x or last_rect.y != self._spray.rect.y:
+                self._spray.dirty = 1
+
+            # TODO: only check if polygon collides
+            for fire in pygame.sprite.spritecollide(self._spray, game.fires, False):
+                killed = fire.damage(game.frame_time)
+                if killed:
+                    # the alpha value may have changed if the fire was removed
+                    self._spray.dirty = 1
 
     def _state_moving(self, game: 'Game') -> None:
         last_rect = self.rect.copy()
@@ -179,6 +229,15 @@ class Person(Animation):
             if self._controller.get_deactivate_button():
                 self._tool.put_down(game, self.rect.left, self.rect.bottom)
                 self._tool = None
+                if self._fire_extinguisher_spraying:
+                    self._stop_fire_extinguisher_spray(game)
+
+        if self._tool is not None:
+            match self._tool.tool_type:
+                case ToolType.FireExtinguisher:
+                    self._fire_extinguisher_update(game)
+                case _:
+                    raise ValueError(f'Unknown tool type {self._tool.tool_type}')
 
         if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
             self.dirty = 1
