@@ -174,7 +174,7 @@ class Person(Animation):
 
             # TODO: only check if polygon collides
             for fire in pygame.sprite.spritecollide(self._spray, game.fires, False):
-                killed = fire.damage(game.frame_time)
+                killed = fire.damage(game)
                 if killed:
                     # the alpha value may have changed if the fire was removed
                     self._spray.dirty = 1

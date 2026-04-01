@@ -10,9 +10,13 @@ if TYPE_CHECKING:
     from sprite import Sprite
 
 class Fire(Animation):
+    MAX_HEALTH = 0.5
+    HEAL_RATE = 0.1
+    DAMAGE_RATE = 1.0
+
     @staticmethod
     def get_propagate_threshold() -> float:
-        return 5.0 + (random.random() - 0.5) * 2.0
+        return 6.5 + (random.random() - 0.5) * 1.5
 
     def __init__(self, game: 'Game', topleft: tuple[int, int], floor: 'Sprite'):
         self._logger = logging.getLogger('Fire')
@@ -29,11 +33,17 @@ class Fire(Animation):
 
         self._floor = floor
         self._propagate_timer = Fire.get_propagate_threshold()
-        self._health = 1.0
+        self._health = Fire.MAX_HEALTH
 
     @override
     def update(self, game: 'Game') -> None:
         super().update(game)
+
+        if self._health < Fire.MAX_HEALTH:
+            self._health = min(
+                self._health + Fire.HEAL_RATE * game.frame_time,
+                Fire.MAX_HEALTH,
+            )
 
         for person in pygame.sprite.spritecollide(self, game.people_sprites, False):
             person.fire_damage(game, game.frame_time)
@@ -68,8 +78,8 @@ class Fire(Animation):
 
         return True
 
-    def damage(self, damage_time: float) -> bool:
-        self._health -= damage_time
+    def damage(self, game: 'Game') -> bool:
+        self._health -= Fire.DAMAGE_RATE * game.frame_time
         if self._health <= 0.0:
             self.kill()
             return True
