@@ -66,6 +66,7 @@ class Person(Animation):
 
         super().__init__(self._basic_images)
         self.rect.center = center
+        self.angle = 90.0
         self.dirty = 1
 
         self.x = float(center[0])
@@ -81,20 +82,21 @@ class Person(Animation):
         self._tool: Tool|None = None
 
         self._fire_extinguisher_spraying = False
-        spray_image = pygame.surface.Surface((15, 25))
-        spray_image.fill((0, 0, 0))
-        spray_image.set_colorkey((0, 0, 0))
-        spray_image.set_alpha(130)
+        self._orig_spray_image = pygame.surface.Surface((15, 25))
+        self._orig_spray_image.fill((0, 0, 0))
+        self._orig_spray_image.set_colorkey((0, 0, 0))
+        self._orig_spray_image.set_alpha(130)
         points = [
             (0, 0),
             (14, 0),
             (8, 24),
             (6, 24),
         ]
-        pygame.draw.polygon(spray_image, (100, 100, 100), points)
-        self._spray = Sprite(spray_image)
+        pygame.draw.polygon(self._orig_spray_image, (100, 100, 100), points)
+        self._spray = Sprite(self._orig_spray_image)
+        self._spray_angle = self.angle
 
-        info_sprite = Sprite(basic_image)
+        info_sprite = Sprite(pygame.transform.rotate(basic_image, 90.0))
         info_sprite.rect.topleft = (10, index * 30 + 10)
         game.info_overlay_sprites.add(info_sprite)
 
@@ -166,6 +168,12 @@ class Person(Animation):
         if self._fire_extinguisher_spraying:
             # TODO: change length based on solid objects
 
+            if self._spray_angle != self.angle:
+                self._spray_angle = self.angle
+                self._spray.image = pygame.transform.rotate(self._orig_spray_image, self._spray_angle)
+                self._spray.dirty = 1
+
+            # TODO: offset from person image
             last_rect = self._spray.rect.copy()
             self._spray.rect.x = self.rect.x
             self._spray.rect.bottom = self.rect.y
@@ -194,6 +202,17 @@ class Person(Animation):
 
         self.rect.center = (int(self.x), int(self.y))
 
+        if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
+            self.dirty = 1
+
+        rot_x = self.controller.get_rotate_x_axis()
+        rot_y = self.controller.get_rotate_y_axis()
+        if abs(rot_x) > 0.0 or abs(rot_y) > 0.0:
+            new_angle = math.degrees(math.atan2(-rot_y, rot_x))
+            if abs(new_angle - self.angle) > 0.01:
+                self.angle = new_angle
+                self.dirty = 1
+
         for sprite in pygame.sprite.spritecollide(self, game.interior_solid_sprites, False):
             if last_rect.top >= sprite.rect.bottom:
                 self.rect.top = sprite.rect.bottom
@@ -214,6 +233,7 @@ class Person(Animation):
                 if game.ship.try_activate_console(self):
                     self._state = Person.State.Console
                     old_bottom = self.rect.bottom
+                    self.angle = 90.0
                     self.set_images(self._control_images, period=300, loop=True)
                     self.rect.bottom = old_bottom
                     self.x = float(self.rect.centerx)
@@ -238,9 +258,6 @@ class Person(Animation):
                     self._fire_extinguisher_update(game)
                 case _:
                     raise ValueError(f'Unknown tool type {self._tool.tool_type}')
-
-        if last_rect.x != self.rect.x or last_rect.y != self.rect.y:
-            self.dirty = 1
 
     def _state_console(self, game: 'Game') -> None:
         if self._controller.get_deactivate_button():

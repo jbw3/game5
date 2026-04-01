@@ -19,6 +19,8 @@ class Animation(Sprite):
             rotated_image = pygame.transform.rotate(image, self._angle)
             self._images.append(rotated_image)
 
+        self.image = self._images[self._index]
+
     @property
     def angle(self) -> float:
         return self._angle
@@ -30,8 +32,8 @@ class Animation(Sprite):
 
     def set_images(self, images: list[pygame.surface.Surface], period: int = -1, loop: bool = False) -> None:
         self._orig_images = images[:]
-        self._rotate_images()
         self._index = 0
+        self._rotate_images()
         self._period = period
         self._loop = loop
         if self._period >= 0:

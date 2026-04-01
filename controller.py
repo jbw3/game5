@@ -44,6 +44,12 @@ class Controller:
     def get_move_y_axis(self) -> float:
         return self._get_adjusted_axis(self._joystick.get_axis(1))
 
+    def get_rotate_x_axis(self) -> float:
+        return self._joystick.get_axis(2)
+
+    def get_rotate_y_axis(self) -> float:
+        return self._joystick.get_axis(3)
+
     def get_aim_x_axis(self) -> float:
         return self._joystick.get_axis(0)
 
