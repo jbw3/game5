@@ -63,6 +63,9 @@ class Person(Animation):
             Person.load_image(game, f'person_control{i+1}.png', color)
             for i in range(5)
         ]
+        self._fire_extinguisher_images = [
+            Person.load_image(game, 'person_fire_extinguisher.png', color),
+        ]
 
         super().__init__(self._basic_images)
         self.rect.center = center
@@ -244,6 +247,10 @@ class Person(Animation):
                         if tool.person is None and tool_rect.colliderect(self.rect):
                             self._tool = tool
                             tool.pick_up(game, self)
+                            if self._tool.tool_type == ToolType.FireExtinguisher:
+                                self.set_images(self._fire_extinguisher_images)
+                            else:
+                                raise ValueError(f'Unknown tool type {self._tool.tool_type}')
                             break
         else:
             if self._controller.get_deactivate_button():
@@ -251,6 +258,7 @@ class Person(Animation):
                 self._tool = None
                 if self._fire_extinguisher_spraying:
                     self._stop_fire_extinguisher_spray(game)
+                self.set_images(self._basic_images)
 
         if self._tool is not None:
             match self._tool.tool_type:
