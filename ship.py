@@ -588,9 +588,11 @@ class Ship(FlightCollisionSprite):
 
     @override
     def damage(self, game: 'Game', hit_points: int) -> None:
-        if game.debug and hit_points > 0:
+        fire_tries = 3
+        while hit_points > 0 and fire_tries > 0:
             if self._try_create_fire():
                 hit_points -= 1
+            fire_tries -= 1
 
         if self._engine_enabled and hit_points > 0 and random.randint(0, 1) == 0:
             self.disable_engine()
