@@ -85,15 +85,15 @@ class Person(Animation):
         self._tool: Tool|None = None
 
         self._fire_extinguisher_spraying = False
-        self._orig_spray_image = pygame.surface.Surface((15, 25))
+        self._orig_spray_image = pygame.surface.Surface((25, 15))
         self._orig_spray_image.fill((0, 0, 0))
         self._orig_spray_image.set_colorkey((0, 0, 0))
         self._orig_spray_image.set_alpha(130)
         points = [
-            (0, 0),
-            (14, 0),
-            (8, 24),
-            (6, 24),
+            (0, 6),
+            (24, 0),
+            (24, 14),
+            (0, 8),
         ]
         pygame.draw.polygon(self._orig_spray_image, (100, 100, 100), points)
         self._spray = Sprite(self._orig_spray_image)
@@ -176,10 +176,11 @@ class Person(Animation):
                 self._spray.image = pygame.transform.rotate(self._orig_spray_image, self._spray_angle)
                 self._spray.dirty = 1
 
-            # TODO: offset from person image
             last_rect = self._spray.rect.copy()
-            self._spray.rect.x = self.rect.x
-            self._spray.rect.bottom = self.rect.y
+            offset = 15.0
+            angle_rad = math.radians(self.angle)
+            self._spray.rect.centerx = self.rect.centerx + int(offset * math.cos(angle_rad) + 0.5)
+            self._spray.rect.centery = self.rect.centery - int(offset * math.sin(angle_rad) + 0.5)
             if last_rect.x != self._spray.rect.x or last_rect.y != self._spray.rect.y:
                 self._spray.dirty = 1
 
