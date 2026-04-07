@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, override
 
 from animation import Animation
 from controller import Controller
+from fire_extinguisher_spray import FireExtinguisherSpray
 from sprite import Sprite
 from status_bar import StatusBar
 from tool import Tool, ToolType
@@ -85,19 +86,8 @@ class Person(Animation):
         self._tool: Tool|None = None
 
         self._fire_extinguisher_spraying = False
-        self._orig_spray_image = pygame.surface.Surface((25, 15))
-        self._orig_spray_image.fill((0, 0, 0))
-        self._orig_spray_image.set_colorkey((0, 0, 0))
-        self._orig_spray_image.set_alpha(130)
-        points = [
-            (0, 6),
-            (24, 0),
-            (24, 14),
-            (0, 8),
-        ]
-        pygame.draw.polygon(self._orig_spray_image, (100, 100, 100), points)
-        self._spray = Sprite(self._orig_spray_image)
-        self._spray_angle = self.angle
+        self._spray = FireExtinguisherSpray(game)
+        self._spray.angle = self.angle
 
         info_sprite = Sprite(pygame.transform.rotate(basic_image, 90.0))
         info_sprite.rect.topleft = (10, index * 30 + 10)
@@ -171,10 +161,8 @@ class Person(Animation):
         if self._fire_extinguisher_spraying:
             # TODO: change length based on solid objects
 
-            if self._spray_angle != self.angle:
-                self._spray_angle = self.angle
-                self._spray.image = pygame.transform.rotate(self._orig_spray_image, self._spray_angle)
-                self._spray.dirty = 1
+            if self._spray.angle != self.angle:
+                self._spray.angle = self.angle
 
             last_rect = self._spray.rect.copy()
             offset = 15.0
